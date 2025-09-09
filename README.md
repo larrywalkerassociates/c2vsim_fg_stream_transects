@@ -1,15 +1,13 @@
 # C2VSIM-FG Stream Transects
 
-Stream transects created using C2VSIM-FG and other public data
-
-## Usage
+Stream transects created using C2VSIM-FG, CASGEM, and AEM lithology logs. This repository uses Poetry for version control
 
 ### Building the book
 
 If you'd like to develop and/or build the C2VSIM-FG Stream Transects book, you should:
 
 1. Clone this repository
-2. Run `pip install -r requirements.txt` (it is recommended you do this within a virtual environment)
+2. Run `poetry install` within the directory containing the repository
 3. (Optional) Edit the books source files located in the `c2vsim_fg_stream_transects/` directory
 4. Run `jupyter-book clean c2vsim_fg_stream_transects/` to remove any existing builds
 5. Run `jupyter-book build c2vsim_fg_stream_transects/`
