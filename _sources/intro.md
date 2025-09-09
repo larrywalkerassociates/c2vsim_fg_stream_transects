@@ -1,11 +1,12 @@
-# Welcome to your Jupyter Book
+# Integrating C2VSIM-FG, Borelogs, and CASGEM to Identify Gaining and Losing Stream Reaches in California's Central Valley
 
-This is a small sample book to give you a feel for how book content is
-structured.
-It shows off a few of the major file types, as well as some sample content.
-It does not go in-depth into any particular topic - check out [the Jupyter Book documentation](https://jupyterbook.org) for more information.
-
-Check out the content pages bundled with this sample book to see more.
+Understanding stream-aquifer interactions is critical for groundwater sustainability agencies to achieve their management
+goals. This dashboard leverages public datasets and open source tools (C2VSIM-FG, CASGEM, and DWR's AEM borelogs) to 
+identify gaining and losing reaches under various hydrologic conditions. In this dashboard, we use public datasets such 
+as C2VSIM-FG, CASGEM, and the borelogs from DWR's AEM survey to compare observed vs simulated  groundwater levels in 
+streams, compare them against streambed elevation, and characterize the interaction between the streams and the 
+underlying aquifers. Animated transects offer stakeholders an intuitive way to visualize groundwater levels relative to 
+streambed elevations.
 
 ```{tableofcontents}
 ```
