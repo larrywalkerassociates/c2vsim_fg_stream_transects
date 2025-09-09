@@ -1,0 +1,5 @@
+# Don't track build files
+c2vsim_fg_stream_transects/_build
+
+#PyCharm files
+.idea
