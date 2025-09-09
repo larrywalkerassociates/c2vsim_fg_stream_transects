@@ -9,8 +9,10 @@ If you'd like to develop and/or build the C2VSIM-FG Stream Transects book, you s
 1. Clone this repository
 2. Run `poetry install` within the directory containing the repository
 3. (Optional) Edit the books source files located in the `c2vsim_fg_stream_transects/` directory
-4. Run `poetry run jupyter-book clean c2vsim_fg_stream_transects/` to remove any existing builds
-5. Run `poetry run jupyter-book build c2vsim_fg_stream_transects/`
+4. Since we only track the .py files, you need to build the .ipynb twins using jupytext. Run `poetry run jupytext --set-formats ipynb,py:percent c2vsim_fg_stream_transects/*.py` when you clone the repository, and
+   `poetry run jupytext --update c2vsim_fg_stream_transects/*.py` when you make edits.
+6. Run `poetry run jupyter-book clean c2vsim_fg_stream_transects/` to remove any existing builds
+7. Run `poetry run jupyter-book build c2vsim_fg_stream_transects/`
 
 A fully-rendered HTML version of the book will be built in `c2vsim_fg_stream_transects/_build/html/`.
 
