@@ -1,0 +1,2 @@
+data/c2vsimfg_v1.5/Results/gwallout_stream_nodes.csv filter=lfs diff=lfs merge=lfs -text
+data/c2vsimfg_v1.5/Results/C2VSimFG_GW_HeadAll.out filter=lfs diff=lfs merge=lfs -text
