@@ -76,7 +76,7 @@ stream_nodes_df = get_stream_nodes(streams_def_file_path, rating_points=10)
 # We'll have to import the node definition file
 gw_nodes_df = get_groundwater_nodes(nodes_def_file_path)
 
-make_stream_lines_shp = False
+make_stream_lines_shp = True
 
 if make_stream_lines_shp:
 
@@ -131,10 +131,69 @@ stratigraphy_df = get_stratigraphy(stratigraphy_file_path)
 
 wt_stream_nodes_csv_path = os.path.join(results_dir, "gwallout_stream_nodes.csv")
 
-make_wt_stream_nodes = False
+make_wt_stream_nodes = True
 if make_wt_stream_nodes:
 
+    gwalloutfl_path: str = gwalloutfl_path
+    date_width: int = 21
+    head_width: int = 12
+    header_lines: int = 5
     gwallout_df = load_gwalloutfl(gwalloutfl_path)
+
+    ####################################################################################################################
+
+    colspecs = [(0, date_width)]
+    i_start = date_width
+    nlay = 1
+
+    try:
+        with open(gwalloutfl_path, "r") as file:
+            for _ in range(header_lines):
+                file.readline()
+
+            nodes_str = file.readline()
+
+            nodes_lst = []
+
+            for node in line_to_list(nodes_str)[2:]:
+                try:
+                    nodes_lst.append(int(node))
+
+                except Exception as exc:
+                    raise TypeError(f"Could not convert node index '{node}' to integer") from exc
+
+            n_nodes = len(nodes_lst)
+            file.readline()
+            line = file.readline()
+            while len(line_to_list(line)) < n_nodes + 1:
+                nlay += 1
+                line = file.readline()
+
+    except FileNotFoundError:
+        print(f"Error: The file at {gwalloutfl_path} was not found.")
+
+    for _ in nodes_lst:
+        i_end = i_start + head_width
+        colspecs.append((i_start, i_end))
+        i_start = i_end
+
+    try:
+        df = pd.read_fwf(gwalloutfl_path, skiprows=header_lines, colspecs=colspecs)
+
+        colnames = ["date"] + nodes_lst
+        df.columns = colnames
+        n_dates = df.loc[~df["date"].isna()].shape[0]
+        df["date"] = df["date"].ffill()
+        df["layer"] = n_dates * list(range(1, nlay + 1))
+        colnames.insert(1, "layer")
+        df = df[colnames]
+        df["date"] = pd.to_datetime(df["date"], format="%m/%d/%Y_24:00")
+
+
+    except Exception as e:
+        print(f"An unexpected error occurred while reading the file: {e}")
+
+    ###################################################################################################################
 
     gwallout_df_long = pd.melt(gwallout_df, id_vars=["date", "layer"], var_name="igw", value_name="head_ft")
 
@@ -215,7 +274,7 @@ obs_wells_butte_creek_shp_path = os.path.join(data_dir, "obs_wells_butte_creek.s
 lith_logs_butte_creek_shp_path = os.path.join(data_dir, "lith_logs_butte_creek.shp")
 obs_butte_creek_csv_path = os.path.join(data_dir, "obs_wells_butte_creek.csv")
 
-select_casgem_wells_and_lithology_logs = True
+select_casgem_wells_and_lithology_logs = False
 if select_casgem_wells_and_lithology_logs:
     # We download CASGEM wells for the counties that Butte Creek crosses
     url = "https://data.cnra.ca.gov/api/3/action/datastore_search_sql?"
