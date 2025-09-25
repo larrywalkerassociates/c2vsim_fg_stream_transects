@@ -1,103 +1,94 @@
-""" Function to get supply adjustment specification data from a Supply Adjustment Specifications File"""
+""" Function to create a GeoDataframe of stream lines from a DataFrame of stream nodes and another DataFrame of
+groundwater nodes created with functions get_stream_nodes and get_groundwater_nodes from iwfm_lwa package"""
 
-import datetime
 
+from shapely import LineString
+import geopandas as gpd
 import pandas as pd
 
-from ..files.get_var import get_var
-from ..files.line_to_list import line_to_list
-from ..files.skip_until_flag import skip_until_flag
-
-def get_supply_adj_specs(
-        supply_adj_specs_file_path: str,
-        ncoladj_flag: str = "/ NCOLADJ",
-        eob_flag: str="C-----------",
-        skip_blocks: int=2
-)-> pd.DataFrame:
+def make_stream_lines_gdf(
+        stream_nodes_df: pd.DataFrame,
+        gw_nodes_df: pd.DataFrame,
+        igw_col: str="igw",
+        id_col: str= "id",
+        x_col: str="x",
+        y_col: str="y",
+        name_col: str="name",
+        crs: int=26910,
+)-> gpd.GeoDataFrame:
 
     """
-    Parse supply adjustment specifications from a Supply Adjustment Specifications File.
+    Create GeoDataframe of stream lines from a DataFrame of stream nodes and another DataFrame of groundwater nodes
 
-    This function locates the NCOLADJ variable (number of columns in the supply adjustment specification data file),
-    navigates to the start of the supply adjustment specifications table by skipping a configurable number of
-    end-of-block markers, and then parses supply adjustment options for each timestep row into a structured table.
+    This function creates a GeoDataframe of stream lines from a DataFrame of stream nodes and another DataFrame of
+    groundwater nodes created with functions get_stream_nodes and get_groundwater_nodes from iwfm_lwa package.
 
     Parameters
     ----------
-    supply_adj_specs_file_path : str
-        Path to the Supply Adjustment Specifications file (text format).
-    ncoladj_flag : str, optional
-        Flag used to locate the NCOLADJ value (number of columns in the supply adjustment specifications data file),
-        by default "/ NCOLADJ".
-    eob_flag : str, optional
-        Marker indicating the end of a data block or delimiting headers, by default "C-----------".
-    skip_blocks : int, optional
-        Number of end-of-block markers to skip after NCOLADJ to reach the supply adjustment specifications table,
-        by default 2.
+    stream_nodes_df : pd.DataFrame
+        Dataframe of stream nodes created using functions get_stream_nodes from iwfm_lwa package.
+    gw_nodes_df : pd.DataFrame
+        Dataframe of groundwater nodes created using functions get_groundwater_nodes from iwfm_lwa package.
+    igw_col : str, optional
+        Column containing groundwater node index for stream_nodes_df and gw_nodes_df.
+        Default is "igw".
+    id_col : str, optional
+        Column containing stream ids for stream_nodes_df.
+        Default is "id".
+    x_col: str, optional
+        Column containing node x coordinates for gw_nodes_df.
+        Default is "x".
+    y_col: str, optional
+        Column containing node y coordinates for gw_nodes_df.
+        Default is "y".
+    crs: int, optional
+        EPSG code of reference coordinate system used in the model.
+        Default is 6414 (NAD83 / California Albers in m).
 
     Returns
     -------
-    pandas.DataFrame
-        A table with one row per timestep and the following columns:
-        - 'date' (datetime): Timestamp.
-        - 'kadj_k' (str): Supply adjustment option, for each k in 1 to NCOLADJ.
+    geopandas.GeoDataFrame
+        A table with one row per stream and the following columns:
+        - 'id' (int): Stream ID.
+        - 'name' (str): Stream name.
 
-    Raises
-    ------
-    ValueError
-        If NCOLADJ cannot be read, if the file ends before all timesteps are parsed,
-        if a row has fewer than the expected number of fields, if the date format is invalid.
     """
 
-    with open(supply_adj_specs_file_path, "r") as read_file:
-        data = read_file.read()
+    # We join coordinates to stream nodes
+    stream_nodes_df = pd.merge(stream_nodes_df, gw_nodes_df, on=igw_col, how="left")
 
-    # List with lines
-    lines = data.split("\n")
+    def add_coords(x):
+        coords = (x[x_col], x[y_col])
+        return coords
 
-    # Let's find the number of supply adjustment columns
-    try:
-        ncoladj, i = get_var(supply_adj_specs_file_path, ncoladj_flag)
-        ncoladj = int(ncoladj)
+    stream_nodes_df["coords"] = stream_nodes_df.apply(add_coords, axis=1)
 
-    except Exception as exc:
-        raise ValueError(f"Could not read NCOLADJ from flag '{ncoladj_flag}' in {supply_adj_specs_file_path}") from exc
-
-    # Let's skip blocks
-    for _ in range(skip_blocks):
-        i = skip_until_flag(lines, i, eob_flag)
-        i += 1
-
-    # Let's find theindex of the end of the table
-    i_eot = skip_until_flag(lines, i, eob_flag)
+    # Let's make line with list of coordinates for each node
+    reaches = stream_nodes_df[id_col].unique()
 
     records = []
-    k = 1
-    while i < i_eot:
 
-        line = lines[i]
-        line_list = line_to_list(line)
+    for reach in reaches:
+        stream_network_df_local = stream_nodes_df.loc[
+            stream_nodes_df[id_col] == reach
+            ].reset_index(drop=True)
+        geometry = LineString(stream_network_df_local.coords.to_list())
 
-        if len(line_list) < ncoladj + 1:
-            raise ValueError(f"supply adjustment row {k} at line {i} has {len(line_list)} fields, "
-                             f"expected ≥ {ncoladj + 1}: '{line}'")
+        names = stream_network_df_local[name_col].unique()
+        if len(names) > 1:
+            print(f"Warning: Multiple names found for stream ID {reach}: {names}")
 
-        record = {}
-        try:
-            record["date"] = datetime.datetime.strptime(line_list[0], "%m/%d/%Y_24:00")
-        except ValueError:
-            raise ValueError(f"Invalid date format in line: {line}")
-
-        for j in range(1, ncoladj + 1):
-            record[f"kadj_{j}"] = str(line_list[j])
+        record = {
+            id_col: reach,
+            name_col: names[0],
+            "geometry": geometry,
+        }
 
         records.append(record)
 
-        i += 1
-        k += 1
+    streams_df = pd.DataFrame(records)
 
-    df = pd.DataFrame(
-        records
-    )
+    streams_gdf = gpd.GeoDataFrame(
+        data=streams_df, geometry="geometry", crs=crs)
 
-    return df
+    return streams_gdf
