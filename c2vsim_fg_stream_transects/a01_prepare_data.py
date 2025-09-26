@@ -18,6 +18,7 @@ import os
 import requests
 import warnings
 
+import numpy as np
 from shapely import LineString, Point
 import geopandas as gpd
 import pandas as pd
@@ -32,10 +33,8 @@ warnings.filterwarnings('ignore')
 repo_dir = os.getcwd()
 current_dir = os.getcwd()
 
-while os.path.split(repo_dir)[1] != "c2vsim_fg_stream_transects":
+while os.path.split(os.path.split(repo_dir)[0])[1] == "c2vsim_fg_stream_transects":
     repo_dir = os.path.split(repo_dir)[0]
-    if os.path.split(os.path.split(repo_dir)[0])[1] == "c2vsim_fg_stream_transects":
-        repo_dir = os.path.split(repo_dir)[0]
 
 os.chdir(repo_dir)
 
@@ -115,6 +114,14 @@ for stream_line in streams_gdf.itertuples():
 projs_df = pd.DataFrame(records)
 stream_nodes_df = pd.merge(stream_nodes_df, projs_df, how="left")
 
+save_butte_creek_stream_nodes = False
+butte_creek_stream_nodes_csv_path = os.path.join(data_dir, "butte_creek_stream_nodes.csv")
+if save_butte_creek_stream_nodes:
+    butte_creek_stream_nodes_df = stream_nodes_df.loc[stream_nodes_df["name"].str.find("BUTTE")>=0].reset_index(drop=True)
+    butte_creek_stream_nodes_df.to_csv(butte_creek_stream_nodes_csv_path, index=False)
+else:
+    butte_creek_stream_nodes_df = pd.read_csv(butte_creek_stream_nodes_csv_path)
+
 # %% [markdown] editable=true slideshow={"slide_type": ""}
 # 3. We load the Stratigraphy File and join ground surface elevations and layer thicknesses to the stream nodes.
 # 4. We load the timeseries "Groundwater Head at All Nodes" file (C2VSimFG_GW_HeadAll.out) and join simulated groundwater heads
@@ -130,14 +137,11 @@ stratigraphy_file_path = os.path.join(preprocessor_dir, "C2VSimFG_Stratigraphy.d
 stratigraphy_df = get_stratigraphy(stratigraphy_file_path)
 
 wt_stream_nodes_csv_path = os.path.join(results_dir, "gwallout_stream_nodes.csv")
+butte_creek_wt_stream_nodes_csv_path = os.path.join(data_dir, "butte_creek_gwallout_stream_nodes.csv")
 
 make_wt_stream_nodes = False
 if make_wt_stream_nodes:
 
-    gwalloutfl_path: str = gwalloutfl_path
-    date_width: int = 21
-    head_width: int = 12
-    header_lines: int = 5
     gwallout_df = load_gwalloutfl(gwalloutfl_path)
     # Let's convert heads from m to ft
 
@@ -208,12 +212,30 @@ if make_wt_stream_nodes:
         ["date", "igw", "wte_ft", "head_ft_1", "head_ft_2", "head_ft_2", "head_ft_3", "head_ft_4"]
     ]
 
-    gwallout_stream_nodes_df.to_csv(wt_stream_nodes_csv_path)
+    gwallout_stream_nodes_df.to_csv(wt_stream_nodes_csv_path, index=False)
+    butte_creek_gwallout_stream_nodes_df = pd.merge(
+        gwallout_stream_nodes_df,
+        butte_creek_stream_nodes_df["igw"],
+
+        how="right"
+    ).reset_index(drop=True)
+
+    butte_creek_gwallout_stream_nodes_df.to_csv(butte_creek_wt_stream_nodes_csv_path, index=False)
 else:
     gwallout_stream_nodes_df = pd.read_csv(wt_stream_nodes_csv_path)
+    butte_creek_gwallout_stream_nodes_df = pd.read_csv(butte_creek_wt_stream_nodes_csv_path)
+
+all_ts_df = pd.DataFrame(
+    {"date": pd.to_datetime(gwallout_stream_nodes_df["date"].unique())}
+
+)
+
+all_ts_df["date_sim"] = all_ts_df["date"]
+
 
 # %% [markdown] editable=true slideshow={"slide_type": ""}
 # 6. Select CASGEM wells and AEM lithology logs within 500 m of Butte Creek
+# 7. Download CASGEM water level observations for the selected wells.
 # %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
 butte_creek_buffer = butte_creek_line_gdf.buffer(500)[0]
 obs_wells_butte_creek_shp_path = os.path.join(data_dir, "obs_wells_butte_creek.shp")
@@ -270,10 +292,6 @@ if select_casgem_wells_and_lithology_logs:
     )
     lith_logs_butte_creek_gdf.to_file(lith_logs_butte_creek_shp_path)
 
-    # %% [markdown] editable=true slideshow={"slide_type": ""}
-    # 7. Download CASGEM water level observations for the selected wells.
-    # %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
-
     label_col = "site_code"
 
     url = "https://data.cnra.ca.gov/api/3/action/datastore_search_sql?"
@@ -288,8 +306,47 @@ if select_casgem_wells_and_lithology_logs:
     response_dict = json.loads(response_dmc.text)
 
     obs_butte_creek_df = pd.json_normalize(response_dict["result"]["records"])
+    obs_butte_creek_df["date"] = pd.to_datetime(obs_butte_creek_df["msmt_date"])
+    obs_butte_creek_df = obs_butte_creek_df.sort_values(by="date").reset_index(drop=True)
+    obs_butte_creek_df = pd.merge_asof(
+            obs_butte_creek_df, all_ts_df, on="date", direction="nearest"
+        )
+    obs_butte_creek_df = obs_butte_creek_df.drop(columns=["date"])
+    obs_butte_creek_df = obs_butte_creek_df.rename(columns={
+        "date_sim": "date"})
+    # Let's average by well and date
+    obs_butte_creek_df["gwe"] = obs_butte_creek_df["gwe"].astype(float)
+    obs_butte_creek_df = obs_butte_creek_df[[label_col,"date","gwe"]].groupby(
+        [label_col, "date"]
+    ).mean().reset_index()
     obs_butte_creek_df.to_csv(obs_butte_creek_csv_path, index=False)
 else:
     obs_wells_butte_creek_gdf = gpd.read_file(obs_wells_butte_creek_shp_path)
     lith_logs_butte_creek_gdf = gpd.read_file(lith_logs_butte_creek_shp_path)
     obs_butte_creek_df = pd.read_csv(obs_butte_creek_csv_path)
+
+
+
+# Let's get lithologies now
+lith_csv_path = os.path.join(aem_dir, "AEM_WELL_LITHOLOGY_csv_WO7_20230327_HQonly.csv")
+butte_lith_csv_path = os.path.join(data_dir, "butte_creek_lithology.csv")
+
+make_butte_lithology = False
+if make_butte_lithology:
+    lith_df = pd.read_csv(lith_csv_path)
+
+    lith_df = lith_df.rename(columns={"WELL_INFO_ID": "WELLINFOID"})
+
+    lith_df["GROUND_SURFACE_ELEVATION_ft"] = lith_df["GROUND_SURFACE_ELEVATION_m"] * 3.28084
+    lith_df["LITH_TOP_DEPTH_ft"] = lith_df["LITH_TOP_DEPTH_m"] * 3.28084
+    lith_df["LITH_BOT_DEPTH_ft"] = lith_df["LITH_BOT_DEPTH_m"] * 3.28084
+
+    # Let's select only the lithologies for Butte Creek
+    lith_butte_creek_df = pd.merge(
+        lith_df,
+        lith_logs_butte_creek_gdf["WELLINFOID"],
+        how="right",
+    ).reset_index(drop=True)
+    lith_butte_creek_df.to_csv(butte_lith_csv_path, index=False)
+else:
+    lith_butte_creek_df = pd.read_csv(butte_lith_csv_path)

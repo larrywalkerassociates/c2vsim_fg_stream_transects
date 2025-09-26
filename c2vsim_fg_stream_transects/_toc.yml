@@ -5,3 +5,4 @@ format: jb-book
 root: intro
 chapters:
 - file: a01_prepare_data.ipynb
+- file: a02_butte_creek.ipynb
