@@ -60,6 +60,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'a01_prepare_data';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Butte Creek Stream Transect" href="a02_butte_creek.html" />
     <link rel="prev" title="Integrating C2VSIM-FG, Borelogs, and CASGEM to Identify Gaining and Losing Stream Reaches in California’s Central Valley" href="intro.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -180,6 +181,7 @@
         </ul>
         <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Preparing Stream and Groundwater Data from C2VSimFG v1.5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="a02_butte_creek.html">Butte Creek Stream Transect</a></li>
 </ul>
 
     </div>
@@ -386,13 +388,31 @@ consists of the following steps:</p>
 <ol class="arabic simple">
 <li><p>We load the Stream Specification File and the Nodal X-Y Coordinate File and generate a lines geodataframe
 of the streams represented in the model.</p></li>
-<li><p>Using the stream lines shapefile generated in the previous step, we select the streams of interest for our analysis.</p></li>
+</ol>
+<div class="cell tag_remove-input docutils container">
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Using the stream lines shapefile generated in the previous step, we calculate the distance of each stream node with
+respect to the origin of the stream line.</p></li>
+</ol>
+<div class="cell tag_remove-input docutils container">
+</div>
+<ol class="arabic simple" start="3">
 <li><p>We load the Stratigraphy File and join ground surface elevations and layer thicknesses to the stream nodes.</p></li>
 <li><p>We load the timeseries “Groundwater Head at All Nodes” file (C2VSimFG_GW_HeadAll.out) and join simulated groundwater heads
 to stream nodes.</p></li>
 <li><p>For each node, we extract the groundwater heads for the highest active layer. To do so, we iterate through the
-layers and select the highest one that presents a thickness greater than zero.</p></li>
+layers and select the highest one that presents a thickness greater than zero and is above the bottom of the layer.</p></li>
+<li><p>Select CASGEM wells and lithology logs within 500 m of Butte Creek.</p></li>
 </ol>
+<div class="cell tag_remove-input docutils container">
+</div>
+<ol class="arabic simple" start="6">
+<li><p>Select CASGEM wells and AEM lithology logs within 500 m of Butte Creek</p></li>
+<li><p>Download CASGEM water level observations for the selected wells.</p></li>
+</ol>
+<div class="cell tag_remove-input docutils container">
+</div>
 </section>
 
     <script type="text/x-thebe-config">
@@ -433,6 +453,15 @@ layers and select the highest one that presents a thickness greater than zero.</
         <p class="prev-next-subtitle">previous</p>
         <p class="prev-next-title">Integrating C2VSIM-FG, Borelogs, and CASGEM to Identify Gaining and Losing Stream Reaches in California’s Central Valley</p>
       </div>
+    </a>
+    <a class="right-next"
+       href="a02_butte_creek.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Butte Creek Stream Transect</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>
