@@ -73,9 +73,9 @@ lith_csv_path = os.path.join(data_dir, f"{stream_name.lower()}_lithology.csv")
 
 
 # %% [markdown] editable=true slideshow={"slide_type": ""}
-# # Sacramento River: R
-# In this section, we will make a stream transect for Butte Creek using the C2VSim-FG model streambed and groundwater
-# table elevations, DWR CASGEM groundwater levels observations, and DWR's AEM lithology logs.
+# ## Chico to Red Bluff
+# In this section, we look at the section of the Sacramento River spanning from Chico to Red Bluff
+# (190 to 250 miles upstream from confluence with the San Joaquin River)
 # %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
 
 # Let's load the stream nodes
@@ -119,6 +119,8 @@ obs_df = pd.read_csv(obs_wells_csv_path, parse_dates=["date"])
 obs_df.loc[(obs_df["site_code"]=="396568N1217818W001")&(obs_df["date"]=="2015-09-30"),"date"] = pd.to_datetime(
     "2015-10-31"
 )
+
+obs_df = obs_df.loc[obs_df["site_code"].isin(obs_lut_df["site_code"])].reset_index(drop=True)
 
 
 step_miles = 1 * np.power(
@@ -211,133 +213,14 @@ kwargs = {
     "streambed_kwargs": streambed_kwargs
 }
 
-# html_video = make_transect_animation(
-#         stream_nodes_df,
-#         sim_df,
-#         obs_df,
-#         obs_lut_df,
-#         lith_lut_df,
-#         lith_df,
-#     **kwargs)
-
-###################################################################################################################
-date_col = kwargs.pop("date_col", "date")
-obs_col = kwargs.get("obs_col", "gwe")
-obs_kwargs = kwargs.get("obs_kwargs", None)
-proj_d_col = kwargs.get("proj_d_col", "proj")
-sim_col = kwargs.get("sim_col", "wte_ft")
-sim_kwargs = kwargs.get("sim_kwargs", None)
-title = kwargs.get("title", "Butte Creek Stream Transect")
-title_kwargs = kwargs.get("title_kwargs", None)
-well_id_col = kwargs.get("well_id_col", "site_code")
-node_key_col = kwargs.pop("node_key_col", "igw")
-interval = kwargs.pop("interval", 500)  # milliseconds between frames
-
-if obs_kwargs is None:
-    obs_kwargs = {
-        "label": 'Observed GWE',
-        "markerfacecolor": "#4B7164",
-        "marker": 'o',
-        "color": "w"
-    }
-
-if sim_kwargs is None:
-    sim_kwargs = {
-        "color": "navy",
-        "label": "Simulated GWE"
-    }
-    kwargs["sim_kwargs"] = sim_kwargs
-
-if title_kwargs is None:
-    title_kwargs = {"pad": 150}
-    kwargs["title_kwargs"] = title_kwargs
-
-fig, axes = make_transect_layout(
-    stream_nodes_df,
-    sim_df,
-    obs_df,
-    obs_lut_df,
-    lith_lut_df,
-    lith_df, **kwargs)
-
-sim_kwargs.pop("label")
-obs_kwargs.pop("label")
-obs_kwargs["color"] = obs_kwargs.pop("markerfacecolor")
-
-
-# Now, we make the update function that will make the frames in the animation
-def update(
-        ts,
+html_video = make_transect_animation(
+        stream_nodes_df,
+        sim_df,
         obs_df,
         obs_lut_df,
-        sim_df,
-        date_col=date_col,
-        proj_d_col=proj_d_col,
-        sim_col=sim_col,
-        title=title,
-        title_kwargs=title_kwargs,
-        obs_kwargs=obs_kwargs,
-        well_id_col=well_id_col):
-    artists = []
-    # List of artists labels that we need to remove every timestep
-    artists_to_remove = obs_lut_df[well_id_col].tolist() + [sim_col] + [title]
-    # Let's remove artists from previous frame
-    for artist in axes[0].get_children():
-        artist_label = artist.get_label()
-        if artist_label in artists_to_remove:
-            try:
-                artist.remove()
-            except ValueError:
-                pass
-
-    # Let's add observations for the given timestep
-    obs_df_ts = obs_df[obs_df[date_col] == ts].reset_index(drop=True)
-    for well in obs_df_ts[well_id_col].unique().tolist():
-        x = obs_lut_df.loc[obs_lut_df[well_id_col] == well, proj_d_col].values[0]
-        obs = obs_df_ts.loc[obs_df_ts[well_id_col] == well, obs_col].values[0]
-        artists.append(axes[0].scatter(x, obs, label=well, **obs_kwargs))
-
-    # Let's add simulated groundwater levels for the given timestep
-    sim_df_ts = sim_df[sim_df[date_col] == ts].reset_index(drop=True)
-    # Let's join with stream nodes to get the projection distance
-    sim_df_ts = pd.merge(
-        sim_df_ts,
-        stream_nodes_df[[proj_d_col, node_key_col]],
-        on=node_key_col,
-        how="left")
-    artists.append(
-        axes[0].plot(
-            sim_df_ts[proj_d_col],
-            sim_df_ts[sim_col],
-            label=sim_col,
-            **sim_kwargs
-        )
-    )
-
-    # let's set the new title label for the given timestep
-    title = f"{ts.strftime('%Y %B')}"
-    artists_to_remove[len(artists_to_remove) - 1] = title
-    artists.append(axes[0].set_title(title, **title_kwargs))
-
-    return artists
-
-
-ani = animation.FuncAnimation(
-    fig=fig,
-    func=functools.partial(
-        update,
-        obs_df=obs_df,
-        obs_lut_df=obs_lut_df,
-        sim_df=sim_df
-    ),
-    frames=sim_df[date_col].unique(),
-    interval=interval,
-)
-
-html_video = ani.to_html5_video()
-
-plt.close()
-###################################################################################################################
+        lith_lut_df,
+        lith_df,
+    **kwargs)
 
 widgets.HTML(
         value=html_video,

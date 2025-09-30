@@ -15,11 +15,19 @@
 import datetime
 import json
 import os
+import rasterio
 import requests
 import warnings
 
+from myst_nb import glue
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+from matplotlib_map_utils.core.north_arrow import NorthArrow, north_arrow
 import numpy as np
 from shapely import LineString, Point
+import shapely
 import geopandas as gpd
 import pandas as pd
 
@@ -51,15 +59,22 @@ results_dir = os.path.join(model_dir, "Results")
 aem_dir = os.path.join(data_dir, "sa7_supportingdata_20230428")
 
 gwalloutfl_path = os.path.join(results_dir, "C2VSimFG_GW_HeadAll.out")
+bathymetry_path = os.path.join(data_dir, "sacramento_river_bathymetry_2m.tif")
+sacramento_path = os.path.join(data_dir, "sacramento.shp")
+yuba_city_path = os.path.join(data_dir, "yuba_city.shp")
+chico_path = os.path.join(data_dir, "chico.shp")
+red_bluff_path = os.path.join(data_dir, "red_bluff.shp")
 
 # %% [markdown] editable=true slideshow={"slide_type": ""}
-# # Preparing Stream and Groundwater Data from C2VSimFG v1.5
-# In this section, we prepare the model data that will be used to make the stream transects. The workflow used hereafter
-# consists of the following steps:
-# 1. We load the Stream Specification File and the Nodal X-Y Coordinate File and generate a lines geodataframe
-# of the streams represented in the model.
-# %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
+# # Methods
+# - Description of the tools and techniques used to solve the problem stated in the introduction
+# - Section check:
+#   - Does it allow the reader to follow and repeat what was done?
+#   - Does it permit evaluation of how skillfully the work was designed and carried out?
+#   - Does it place the work in a certain historical context leaving the door open for fertile restudy as the
 
+# %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
+# Let's add stream coordinates to stream nodes
 # Let's create the geodataframe of streams
 
 # Path to stream definition file
@@ -70,12 +85,15 @@ nodes_def_file_path = os.path.join(preprocessor_dir, "C2VSimFG_Nodes.dat")
 
 stream_lines_shp_path = os.path.join(data_dir, "stream_lines.shp")
 
+#Buffer Distance in meters
+buffer_distance_m = 500
+
 stream_nodes_df = get_stream_nodes(streams_def_file_path, rating_points=10)
 
 # We'll have to import the node definition file
 gw_nodes_df = get_groundwater_nodes(nodes_def_file_path)
 
-make_stream_lines_shp = True
+make_stream_lines_shp = False
 
 if make_stream_lines_shp:
 
@@ -85,59 +103,86 @@ if make_stream_lines_shp:
 else:
     streams_gdf = gpd.read_file(stream_lines_shp_path)
 
-butte_creek_line_gdf = streams_gdf.loc[streams_gdf["name"].str.find("BUTTE")>=0].reset_index(drop=True)
+# Stream we will look at
+stream_name = "SACRAMENTO"
 
-# %% [markdown] editable=true slideshow={"slide_type": ""}
-# 2. Using the stream lines shapefile generated in the previous step, we calculate the distance of each stream node with
-# respect to the origin of the stream line.
-# %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
-# Let's add stream coordinates to stream nodes
+stream_line_gdf = streams_gdf.loc[streams_gdf["name"]==stream_name].reset_index(drop=True)
+
+stream_line_gdf = stream_line_gdf.drop(columns="id")
+
+stream_line_gdf = stream_line_gdf.dissolve(by="name").reset_index()
 stream_nodes_df = pd.merge(stream_nodes_df, gw_nodes_df, on="igw", how="left")
 
 records = []
-stream_line = list(streams_gdf.itertuples())[0]
-for stream_line in streams_gdf.itertuples():
-    stream_line_geometry = getattr(stream_line, "geometry")
-    stream_name = getattr(stream_line, "name")
-    for stream_node in stream_nodes_df[stream_nodes_df["name"] == stream_name].reset_index(drop=True).itertuples():
-        stream_node_x = getattr(stream_node, "x")
-        stream_node_y = getattr(stream_node, "y")
-        irv = getattr(stream_node, "irv")
-        point = Point(stream_node_x, stream_node_y)
-        proj = stream_line_geometry.project(point)
-        record = {
-            "irv": irv,
-            "proj": proj
-        }
-        records.append(record)
+
+stream_line_geometry = stream_line_gdf.loc[0,"geometry"]
+
+stream_nodes_df = stream_nodes_df[stream_nodes_df["name"] == stream_name].reset_index(drop=True)
+
+for stream_node in stream_nodes_df.itertuples():
+    stream_node_x = getattr(stream_node, "x")
+    stream_node_y = getattr(stream_node, "y")
+    irv = getattr(stream_node, "irv")
+    point = Point(stream_node_x, stream_node_y)
+    proj = stream_line_geometry.project(point)
+    record = {
+        "irv": irv,
+        "proj": proj
+    }
+    records.append(record)
 
 projs_df = pd.DataFrame(records)
 stream_nodes_df = pd.merge(stream_nodes_df, projs_df, how="left")
 
-save_butte_creek_stream_nodes = False
-butte_creek_stream_nodes_csv_path = os.path.join(data_dir, "butte_creek_stream_nodes.csv")
-if save_butte_creek_stream_nodes:
-    butte_creek_stream_nodes_df = stream_nodes_df.loc[stream_nodes_df["name"].str.find("BUTTE")>=0].reset_index(drop=True)
-    butte_creek_stream_nodes_df.to_csv(butte_creek_stream_nodes_csv_path, index=False)
-else:
-    butte_creek_stream_nodes_df = pd.read_csv(butte_creek_stream_nodes_csv_path)
+def add_point_geometry(x):
+    geometry = Point(x["x"], x["y"])
+    return geometry
 
-# %% [markdown] editable=true slideshow={"slide_type": ""}
-# 3. We load the Stratigraphy File and join ground surface elevations and layer thicknesses to the stream nodes.
-# 4. We load the timeseries "Groundwater Head at All Nodes" file (C2VSimFG_GW_HeadAll.out) and join simulated groundwater heads
-# to stream nodes.
-# 5. For each node, we extract the groundwater heads for the highest active layer. To do so, we iterate through the
-# layers and select the highest one that presents a thickness greater than zero and is above the bottom of the layer.
-# 6. Select CASGEM wells and lithology logs within 500 m of Butte Creek.
-# %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
+stream_nodes_df["geometry"] = stream_nodes_df.apply(add_point_geometry, axis=1)
+
+save_stream_nodes = False
+stream_nodes_csv_path = os.path.join(data_dir, f"{stream_name.lower()}_stream_nodes.csv")
+stream_nodes_shp_path = os.path.join(data_dir, f"{stream_name.lower()}_stream_nodes.shp")
+if save_stream_nodes:
+    stream_nodes_gdf = gpd.GeoDataFrame(
+        stream_nodes_df,
+        geometry=stream_nodes_df.geometry,
+        crs=26910
+    )
+    values = []
+    with rasterio.open(bathymetry_path) as ds:
+        vals_array = ds.read(1)
+        for point in stream_nodes_gdf["geometry"]:
+            x = point.x
+            y = point.y
+            row,col = ds.index(x,y)
+            if (row>=0) & (row<vals_array.shape[0]) & (col>=0) & (col<vals_array.shape[1]):
+                value = vals_array[row,col]
+            else:
+                value = np.nan
+            values.append(value)
+    # let's remove 0s, which QGIS used to represent nas
+    values = [val if val != 0 else np.nan for val in values]
+    # Let's convert from m to ft
+    values = [val * 3.28084 if not np.isnan(val) else np.nan for val in values]
+    # Let's add bathymetry values to stream nodes
+    stream_nodes_gdf["bathymetry_ft"] = values
+    stream_nodes_df["bathymetry_ft"] = values
+
+    stream_nodes_df.to_csv(stream_nodes_csv_path, index=False)
+    stream_nodes_gdf.to_file(stream_nodes_shp_path)
+else:
+    stream_nodes_df = pd.read_csv(stream_nodes_csv_path)
+    stream_nodes_gdf = gpd.read_file(stream_nodes_shp_path)
+
+
 # Let's load stratigraphy file into dataframe
 stratigraphy_file_path = os.path.join(preprocessor_dir, "C2VSimFG_Stratigraphy.dat")
 
 
 stratigraphy_df = get_stratigraphy(stratigraphy_file_path)
 
-wt_stream_nodes_csv_path = os.path.join(results_dir, "gwallout_stream_nodes.csv")
-butte_creek_wt_stream_nodes_csv_path = os.path.join(data_dir, "butte_creek_gwallout_stream_nodes.csv")
+wt_stream_nodes_csv_path = os.path.join(data_dir, f"{stream_name.lower()}_gwallout_stream_nodes.csv")
 
 make_wt_stream_nodes = False
 if make_wt_stream_nodes:
@@ -146,6 +191,8 @@ if make_wt_stream_nodes:
     # Let's convert heads from m to ft
 
     gwallout_df_long = pd.melt(gwallout_df, id_vars=["date", "layer"], var_name="igw", value_name="head_ft")
+
+    gwallout_df = None
 
     # Let's add bottom elevations of layers
     stratigraphy_df["botm_lay_1"] = stratigraphy_df["gse"] - stratigraphy_df["thck_lay_1"]
@@ -156,6 +203,8 @@ if make_wt_stream_nodes:
         stratigraphy_df[f"botm_lay_{lay}"] = stratigraphy_df[f"botm_lay_{lay-1}"] - stratigraphy_df[f"thck_lay_{lay}"]
 
     gwallout_df_wide = pd.pivot(gwallout_df_long,index=["date", "igw"], columns=["layer"], values=["head_ft"])
+
+    gwallout_df_long = None
 
     gwallout_df_wide = gwallout_df_wide.reset_index()
 
@@ -206,24 +255,24 @@ if make_wt_stream_nodes:
         how="right"
     ).reset_index(drop=True)
 
+    gwallout_df_wide = None
+
     gwallout_stream_nodes_df["wte_ft"] = gwallout_stream_nodes_df.apply(get_wte, axis=1)
 
     gwallout_stream_nodes_df = gwallout_stream_nodes_df[
         ["date", "igw", "wte_ft", "head_ft_1", "head_ft_2", "head_ft_2", "head_ft_3", "head_ft_4"]
     ]
-
-    gwallout_stream_nodes_df.to_csv(wt_stream_nodes_csv_path, index=False)
-    butte_creek_gwallout_stream_nodes_df = pd.merge(
+    gwallout_stream_nodes_df = pd.merge(
         gwallout_stream_nodes_df,
-        butte_creek_stream_nodes_df["igw"],
+        stream_nodes_df["igw"],
 
         how="right"
     ).reset_index(drop=True)
 
-    butte_creek_gwallout_stream_nodes_df.to_csv(butte_creek_wt_stream_nodes_csv_path, index=False)
+    gwallout_stream_nodes_df.to_csv(wt_stream_nodes_csv_path, index=False)
 else:
     gwallout_stream_nodes_df = pd.read_csv(wt_stream_nodes_csv_path)
-    butte_creek_gwallout_stream_nodes_df = pd.read_csv(butte_creek_wt_stream_nodes_csv_path)
+
 
 all_ts_df = pd.DataFrame(
     {"date": pd.to_datetime(gwallout_stream_nodes_df["date"].unique())}
@@ -231,23 +280,17 @@ all_ts_df = pd.DataFrame(
 )
 
 all_ts_df["date_sim"] = all_ts_df["date"]
-
-
-# %% [markdown] editable=true slideshow={"slide_type": ""}
-# 6. Select CASGEM wells and AEM lithology logs within 500 m of Butte Creek
-# 7. Download CASGEM water level observations for the selected wells.
-# %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
-butte_creek_buffer = butte_creek_line_gdf.buffer(500)[0]
-obs_wells_butte_creek_shp_path = os.path.join(data_dir, "obs_wells_butte_creek.shp")
-lith_logs_butte_creek_shp_path = os.path.join(data_dir, "lith_logs_butte_creek.shp")
-obs_butte_creek_csv_path = os.path.join(data_dir, "obs_wells_butte_creek.csv")
+buffer = stream_line_gdf.buffer(buffer_distance_m)[0]
+obs_wells_shp_path = os.path.join(data_dir, f"obs_wells_{stream_name.lower()}.shp")
+lith_logs_shp_path = os.path.join(data_dir, f"lith_logs_{stream_name.lower()}.shp")
+obs_csv_path = os.path.join(data_dir, f"obs_wells_{stream_name.lower()}.csv")
 
 select_casgem_wells_and_lithology_logs = False
 if select_casgem_wells_and_lithology_logs:
     # We download CASGEM wells for the counties that Butte Creek crosses
     url = "https://data.cnra.ca.gov/api/3/action/datastore_search_sql?"
     records = []
-    for county in ['Butte', 'Sutter', 'Glenn', 'Tehama']:
+    for county in ['Butte', 'Colusa', 'Glenn', 'Sacramento', 'Shasta','Sutter', 'Tehama', 'Yolo']:
         sql_county = f'''sql=SELECT * from "af157380-fb42-4abf-b72a-6f9f98868077" WHERE "county_name" IN ('{county}')'''
         sql_county = sql_county.replace(" ", "%20")
         sql_county = sql_county.replace('"', "%22")
@@ -266,74 +309,88 @@ if select_casgem_wells_and_lithology_logs:
 
     obs_wells_gdf = obs_wells_gdf.to_crs(streams_gdf.crs)
 
-    obs_wells_butte_creek_gdf = obs_wells_gdf.loc[obs_wells_gdf.geometry.within(butte_creek_buffer)].reset_index(drop=True)
+    obs_wells_gdf = obs_wells_gdf.loc[obs_wells_gdf.geometry.within(buffer)].reset_index(drop=True)
 
-    # Let's project the wells to the Butte Creek line
-    obs_wells_butte_creek_gdf = project_points_gdf_to_line_string(
-        obs_wells_butte_creek_gdf,
-        butte_creek_line_gdf.loc[0,"geometry"],
+    # Let's project the wells to the Sacramento River line
+    obs_wells_gdf = project_points_gdf_to_line_string(
+        obs_wells_gdf,
+        stream_line_gdf.loc[0,"geometry"],
     "site_code"
     )
 
-    obs_wells_butte_creek_gdf.to_file(obs_wells_butte_creek_shp_path)
 
-    lith_logs_shp_path = os.path.join(aem_dir, "WO7_HQ_LithologyWells.shp")
 
-    lith_logs_gdf = gpd.read_file(lith_logs_shp_path)
+    lith_logs_shp_path_in = os.path.join(aem_dir, "WO7_HQ_LithologyWells.shp")
+
+    lith_logs_gdf = gpd.read_file(lith_logs_shp_path_in)
     lith_logs_gdf = lith_logs_gdf.to_crs(streams_gdf.crs)
 
-    lith_logs_butte_creek_gdf = lith_logs_gdf.loc[lith_logs_gdf.geometry.within(butte_creek_buffer)].reset_index(drop=True)
+    lith_logs_gdf = lith_logs_gdf.loc[lith_logs_gdf.geometry.within(buffer)].reset_index(drop=True)
 
     # Let's project the lithology logs to the Butte Creek line
-    lith_logs_butte_creek_gdf = project_points_gdf_to_line_string(
-        lith_logs_butte_creek_gdf,
-        butte_creek_line_gdf.loc[0,"geometry"],
+    lith_logs_gdf = project_points_gdf_to_line_string(
+        lith_logs_gdf,
+        stream_line_gdf.loc[0,"geometry"],
     "WELLINFOID"
     )
-    lith_logs_butte_creek_gdf.to_file(lith_logs_butte_creek_shp_path)
+    lith_logs_gdf.to_file(lith_logs_shp_path)
 
     label_col = "site_code"
 
     url = "https://data.cnra.ca.gov/api/3/action/datastore_search_sql?"
     dataset_code = "bfa9f262-24a1-45bd-8dc8-138bc8107266"
-    site_codes_list = obs_wells_butte_creek_gdf[label_col].to_list()
-    sql_query = f'''sql=SELECT * from "{
-    dataset_code
-    }" WHERE "site_code" IN ('{ "','".join(site_codes_list) }')'''
-    sql_query = sql_query.replace(" ", "%20")
-    sql_query = sql_query.replace('"', "%22")
-    response_dmc = requests.get(url, params=sql_query)
-    response_dict = json.loads(response_dmc.text)
+    site_codes_list = obs_wells_gdf[label_col].to_list()
+    records = []
+    for site_code in site_codes_list:
+        sql_query = f'''sql=SELECT * from "{
+        dataset_code
+        }" WHERE "site_code" IN ('{site_code}')'''
+        sql_query = sql_query.replace(" ", "%20")
+        sql_query = sql_query.replace('"', "%22")
+        response_dmc = requests.get(url, params=sql_query)
+        response_dict = json.loads(response_dmc.text)
+        records += response_dict["result"]["records"]
 
-    obs_butte_creek_df = pd.json_normalize(response_dict["result"]["records"])
-    obs_butte_creek_df["date"] = pd.to_datetime(obs_butte_creek_df["msmt_date"])
-    obs_butte_creek_df = obs_butte_creek_df.sort_values(by="date").reset_index(drop=True)
-    obs_butte_creek_df = pd.merge_asof(
-            obs_butte_creek_df, all_ts_df, on="date", direction="nearest"
+    obs_df = pd.json_normalize(records)
+    obs_df["date"] = pd.to_datetime(obs_df["msmt_date"])
+    obs_df = obs_df.sort_values(by="date").reset_index(drop=True)
+    obs_df = pd.merge_asof(
+            obs_df, all_ts_df, on="date", direction="nearest"
         )
-    obs_butte_creek_df = obs_butte_creek_df.drop(columns=["date"])
-    obs_butte_creek_df = obs_butte_creek_df.rename(columns={
+    obs_df = obs_df.drop(columns=["date"])
+    obs_df = obs_df.rename(columns={
         "date_sim": "date"})
     # Let's average by well and date
-    obs_butte_creek_df["gwe"] = obs_butte_creek_df["gwe"].astype(float)
-    obs_butte_creek_df = obs_butte_creek_df[[label_col,"date","gwe"]].groupby(
+    obs_df["gwe"] = obs_df["gwe"].astype(float)
+    obs_df = obs_df[[label_col,"date","gwe"]].groupby(
         [label_col, "date"]
     ).mean().reset_index()
-    obs_butte_creek_df.to_csv(obs_butte_creek_csv_path, index=False)
+    obs_df = obs_df.loc[
+        (
+                obs_df["date"] >= pd.to_datetime("1973-09-01")
+        ) & (obs_df["date"] <= pd.to_datetime("2021-09-30"))
+        ].reset_index(drop=True)
+    obs_df.to_csv(obs_csv_path, index=False)
+
+    obs_wells_gdf = obs_wells_gdf.loc[
+        obs_wells_gdf["site_code"].isin(obs_df["site_code"])
+    ].reset_index(drop=True)
+
+    obs_wells_gdf.to_file(obs_wells_shp_path)
 else:
-    obs_wells_butte_creek_gdf = gpd.read_file(obs_wells_butte_creek_shp_path)
-    lith_logs_butte_creek_gdf = gpd.read_file(lith_logs_butte_creek_shp_path)
-    obs_butte_creek_df = pd.read_csv(obs_butte_creek_csv_path)
+    obs_wells_gdf = gpd.read_file(obs_wells_shp_path)
+    lith_logs_gdf = gpd.read_file(lith_logs_shp_path)
+    obs_df = pd.read_csv(obs_csv_path)
 
 
 
 # Let's get lithologies now
-lith_csv_path = os.path.join(aem_dir, "AEM_WELL_LITHOLOGY_csv_WO7_20230327_HQonly.csv")
-butte_lith_csv_path = os.path.join(data_dir, "butte_creek_lithology.csv")
+lith_csv_in_path = os.path.join(aem_dir, "AEM_WELL_LITHOLOGY_csv_WO7_20230327_HQonly.csv")
+lith_csv_path = os.path.join(data_dir, f"{stream_name.lower()}_lithology.csv")
 
-make_butte_lithology = False
-if make_butte_lithology:
-    lith_df = pd.read_csv(lith_csv_path)
+make_lithology = False
+if make_lithology:
+    lith_df = pd.read_csv(lith_csv_in_path)
 
     lith_df = lith_df.rename(columns={"WELL_INFO_ID": "WELLINFOID"})
 
@@ -342,11 +399,280 @@ if make_butte_lithology:
     lith_df["LITH_BOT_DEPTH_ft"] = lith_df["LITH_BOT_DEPTH_m"] * 3.28084
 
     # Let's select only the lithologies for Butte Creek
-    lith_butte_creek_df = pd.merge(
+    lith_df = pd.merge(
         lith_df,
-        lith_logs_butte_creek_gdf["WELLINFOID"],
+        lith_logs_gdf["WELLINFOID"],
         how="right",
     ).reset_index(drop=True)
-    lith_butte_creek_df.to_csv(butte_lith_csv_path, index=False)
+    lith_df.to_csv(lith_csv_path, index=False)
 else:
-    lith_butte_creek_df = pd.read_csv(butte_lith_csv_path)
+    lith_df = pd.read_csv(lith_csv_path)
+
+# We get the axis limits so that all the points in the cross section are shown in the map
+
+stream_line_string = stream_line_gdf.loc[0,"geometry"]
+
+# Let's get the limits of the map
+xsec_start = stream_line_string.length
+xsec_end = 0
+
+# Coordinates associated with the start and end of the cross section
+xsec_start_coords = list(stream_line_string.interpolate(xsec_start).coords)[0]
+xsec_end_coords = list(stream_line_string.interpolate(xsec_end).coords)[0]
+
+x_min = xsec_start_coords[0]
+x_max = xsec_end_coords[0]
+y_min = xsec_start_coords[1]
+y_max = xsec_end_coords[1]
+
+
+for row in stream_nodes_gdf.itertuples():
+    geometry = getattr(row, "geometry")
+    point = geometry.coords[0]
+    proj_d = stream_line_string.project(geometry)
+    # We only consider points within the start and end of the cross section
+    if (proj_d <= xsec_start) & (proj_d >= xsec_end):
+        if point[0] < x_min:
+            x_min = point[0]
+        if point[0] > x_max:
+            x_max = point[0]
+        if point[1] < y_min:
+            y_min = point[1]
+        if point[1] > y_max:
+            y_max = point[1]
+
+# We set an offset of 500 m for axes limits
+axis_lims_offset = 5000
+
+step_miles_x = np.power(
+    10, np.modf
+            (np.log10(
+            (
+                    x_max - x_min
+            ) / 1609.34
+        )
+        )[1]
+)
+
+xlims_utm10n_gdf = gpd.GeoDataFrame(
+    {"utm_10N": [x_min-axis_lims_offset, x_max+axis_lims_offset]},
+    geometry=[Point(x_min-axis_lims_offset, y_min), Point(x_max+axis_lims_offset, y_min)],
+    crs=26910
+)
+
+ylims_utm10n_gdf = gpd.GeoDataFrame(
+    {"utm_10N": [y_min-axis_lims_offset, y_max+axis_lims_offset]},
+    geometry=[Point(x_min, y_min-axis_lims_offset), Point(x_min, y_max+axis_lims_offset)],
+    crs=26910
+)
+
+
+# Let's convert to geographic coordinates
+xlims_geographic_gdf = xlims_utm10n_gdf.to_crs(4326)
+x_max_degrees = xlims_geographic_gdf.loc[1, "geometry"].x
+x_min_degrees = xlims_geographic_gdf.loc[0, "geometry"].x
+
+ylims_geographic_gdf = ylims_utm10n_gdf.to_crs(4326)
+y_max_degrees = ylims_geographic_gdf.loc[1, "geometry"].y
+y_min_degrees = ylims_geographic_gdf.loc[0, "geometry"].y
+
+step_degrees_x = np.modf(x_max_degrees - x_min_degrees)[1]/4
+
+step_degrees_y = np.modf(y_max_degrees - y_min_degrees)[1]/4
+
+xticks = np.arange(
+            np.modf(x_min_degrees/step_degrees_x)[1]*step_degrees_x,
+            np.modf(x_max_degrees/step_degrees_x)[1]*step_degrees_x,
+            step_degrees_x)
+
+yticks = np.arange(
+            np.modf(y_min_degrees/step_degrees_y)[1]*step_degrees_y,
+            np.modf(y_max_degrees/step_degrees_y)[1]*step_degrees_y,
+            step_degrees_y)
+
+xticks_labels = [f"{np.abs(np.modf(tick)[1]):.0f}°{np.modf(np.modf(tick)[0]*60)[1]:.0f}'{np.modf(np.modf(tick)[0]*60)[0]*3600:.1f}\" W" for tick in xticks]
+
+yticks_labels = [f"{np.modf(tick)[1]:.0f}°{np.modf(np.modf(tick)[0]*60)[1]:.0f}'{np.modf(np.modf(tick)[0]*60)[0]*3600:.1f}\" N" for tick in yticks]
+
+step_miles_y = np.power(
+    5, np.modf
+            (np.log10(
+            (
+                    y_max - y_min
+            ) / 1609.34
+        )
+        )[1]
+)
+
+xticks_gdf = gpd.GeoDataFrame(
+    {"4326": xticks},
+    geometry=[Point(x, xlims_geographic_gdf.loc[0, "geometry"].y) for x in xticks],
+    crs=4326
+)
+
+yticks_gdf = gpd.GeoDataFrame(
+    {"4326": yticks},
+    geometry=[Point(ylims_geographic_gdf.loc[0, "geometry"].x, y) for y in yticks],
+    crs=4326
+)
+
+xticks_gdf = xticks_gdf.to_crs(26910)
+
+yticks_gdf = yticks_gdf.to_crs(26910)
+
+xticks_gdf["x"] = xticks_gdf["geometry"].x
+
+yticks_gdf["y"] = yticks_gdf["geometry"].y
+
+# We will create a geodataframe with the tickmarks, which we will project to EPSG:4326
+# the tickmarks in geographic coordinates
+
+sacramento_gdf = gpd.read_file(sacramento_path)
+yuba_city_gdf = gpd.read_file(yuba_city_path)
+chico_gdf = gpd.read_file(chico_path)
+red_bluff_gdf = gpd.read_file(red_bluff_path)
+
+# Let's make geodataframe with transects postmiles
+postmiles = [50, 100, 161, 231]
+
+# Convert to distance from confluence with San Joaquin
+postmiles_text = [int(np.modf((stream_line_string.length/1609.34-postmile)/10)[1]*10) for postmile in postmiles]
+
+postmiles_pts = [stream_line_string.interpolate(postmile*1609.34) for postmile in postmiles]
+
+postmiles_gdf = gpd.GeoDataFrame(
+    data={"postmile": postmiles_text,
+          "geometry": postmiles_pts},
+    crs=26910
+)
+
+subplot_kwargs = {"ncols": 2,
+                  "width_ratios": [0.9, 0.1],
+                  "figsize": (6, 8)}
+
+fig, axes = plt.subplots(**subplot_kwargs)
+
+# Let's plot the Sacramento River stream line now
+
+stream_line_style_kwargs = {"lw": 2}
+legend_elements = []
+
+axes[0] = stream_line_gdf.plot(ax=axes[0], color="blue", **stream_line_style_kwargs)
+legend_elements.append(
+    Line2D([0], [0], color="blue", label= "Sacramento River", zorder = 1, **stream_line_style_kwargs)
+)
+
+# Let's plot the CASGEM wells now
+casgem_well_style_kwargs = {}
+legend_elements.append(Line2D([0], [0], label='CASGEM Wells',
+                              markerfacecolor="#CB6015",marker="o",
+                              color='w', markersize=10, **casgem_well_style_kwargs))
+axes[0] = obs_wells_gdf.plot(ax=axes[0], color = "#CB6015", zorder = 2, **casgem_well_style_kwargs)
+
+axes[1].set_axis_off()
+
+# Let's plot the lithology logs now
+lithology_log_style_kwargs = {"marker": "^"}
+axes[0] = lith_logs_gdf.plot(ax=axes[0], color = "#9BAA4B", zorder = 2, **lithology_log_style_kwargs)
+
+legend_elements.append(Line2D([0], [0], label='Lithology Logs',
+                              markerfacecolor="#9BAA4B",
+                              color='w', markersize=10, **lithology_log_style_kwargs))
+
+axes[0] = sacramento_gdf.plot(ax=axes[0], color = 'none',  hatch = "////", edgecolor="#555555")
+legend_elements.append(Patch(facecolor="none", hatch = "////", edgecolor="#555555", label="Sacramento"))
+
+axes[0] = yuba_city_gdf.plot(ax=axes[0], color = 'none',  hatch = "\\\\\\\\", edgecolor="#F6B704")
+legend_elements.append(Patch(facecolor="none", hatch = "\\\\\\\\", edgecolor="#F6B704", label="Yuba City"))
+
+axes[0] = chico_gdf.plot(ax=axes[0], color = 'none',  hatch = "----", edgecolor="#4B7164")
+legend_elements.append(Patch(facecolor="none",  hatch = "----", edgecolor="#4B7164", label="Chico"))
+
+axes[0] = red_bluff_gdf.plot(ax=axes[0], color = 'none',  hatch = "||||", edgecolor="#A2495E")
+legend_elements.append(Patch(facecolor="none",  hatch = "||||", edgecolor="#A2495E", label="Red Bluff"))
+
+axes[1].legend(handles=legend_elements)
+
+axes[0].set_xlim(x_min-axis_lims_offset, x_max+axis_lims_offset)
+axes[0].set_ylim(y_min-axis_lims_offset, y_max+axis_lims_offset)
+
+axes[0].set_xticks(xticks_gdf["x"], labels=xticks_labels, rotation=90)
+axes[0].set_yticks(yticks_gdf["y"], labels=yticks_labels)
+
+asb = AnchoredSizeBar(axes[0].transData,
+                      5*1609.34,
+                      "5 mi",
+                      size_vertical=1609.34,
+                      loc="upper right",
+                      pad=0.1,
+                      borderpad=0.5,
+                      sep=5,
+                      frameon=False)
+axes[0].add_artist(asb)
+north_arrow(
+    axes[0], location="lower left", rotation={"crs": stream_line_gdf.crs, "reference": "center"}
+)
+
+postmile_240 = postmiles_gdf.loc[0, "postmile"]
+geom_pm_240 = postmiles_gdf.loc[0, "geometry"]
+xy_coords_pm_240 = list(geom_pm_240.coords)[0]
+axes[0].annotate(
+        f"{postmile_240}",
+        xy=xy_coords_pm_240,
+        xytext=(xy_coords_pm_240[0]+8000, xy_coords_pm_240[1]),
+        bbox=dict(boxstyle="square", fc="w"),
+    )
+
+postmile_190 = postmiles_gdf.loc[1, "postmile"]
+geom_pm_190 = postmiles_gdf.loc[1, "geometry"]
+xy_coords_pm_190 = list(geom_pm_190.coords)[0]
+axes[0].annotate(
+        f"{postmile_190}",
+        xy=xy_coords_pm_190,
+        xytext=(xy_coords_pm_190[0]-25000, xy_coords_pm_190[1]),
+        bbox=dict(boxstyle="square", fc="w"),
+    )
+
+postmile_120 = postmiles_gdf.loc[2, "postmile"]
+geom_pm_120 = postmiles_gdf.loc[2, "geometry"]
+xy_coords_pm_120 = list(geom_pm_120.coords)[0]
+axes[0].annotate(
+        f"{postmile_120}",
+        xy=xy_coords_pm_120,
+        xytext=(xy_coords_pm_120[0]-25000, xy_coords_pm_120[1]),
+        bbox=dict(boxstyle="square", fc="w"),
+    )
+
+postmile_60 = postmiles_gdf.loc[3, "postmile"]
+geom_pm_60 = postmiles_gdf.loc[3, "geometry"]
+xy_coords_pm_60 = list(geom_pm_60.coords)[0]
+axes[0].annotate(
+        f"{postmile_60}",
+        xy=xy_coords_pm_60,
+        xytext=(xy_coords_pm_60[0]-25000, xy_coords_pm_60[1]),
+        bbox=dict(boxstyle="square", fc="w"),
+    )
+
+# for row in postmiles_gdf.itertuples():
+#     postmile = getattr(row, "postmile")
+#     geom = getattr(row, "geometry")
+#     axes[0].annotate(
+#         f"{postmile}",
+#         xy=list(geom.coords)[0],
+#         xytext=list(geom.coords)[0],
+#         bbox=dict(boxstyle="square", fc="w"),
+#     )
+
+plt.tight_layout()
+
+glue("sac_river_fig", fig, display=False)
+
+plt.close()
+# %% [markdown] editable=true slideshow={"slide_type": ""}
+# ```{glue:figure} sac_river_fig
+# :figwidth: 800px
+# :name: "sac_river_fig"
+#
+# Sacramento River and selected CASGEM wells and lithology logs.
+# ```
+# %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
