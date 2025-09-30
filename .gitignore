@@ -6,3 +6,10 @@ c2vsim_fg_stream_transects/_build
 
 # Jupyter notebooks
 c2vsim_fg_stream_transects/*.ipynb
+
+# pycache files
+functions/__pycache__/make_transect_animation.cpython-311.pyc
+functions/__pycache__/make_transect_layout.cpython-311.pyc
+
+# Large bathymetry files
+data/sacramento_river_bathymetry*
