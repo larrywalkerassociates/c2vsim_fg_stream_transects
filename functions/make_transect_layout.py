@@ -71,6 +71,9 @@ def make_transect_layout(
     subplot_kwargs: dict, optional
         Additional keyword arguments for creating subplots.
         Default is None.
+    tick_params_kwargs: dict, optional
+        Additional keyword arguments for tick parameters.
+        Default is None.
     title: str, optional
         Title of the plot.
         Default is "Butte Creek Stream Transect".
@@ -142,6 +145,7 @@ def make_transect_layout(
     ylim = kwargs.pop("ylim", None)
     ylabel = kwargs.pop("ylabel", "Elevation (ft amsl)")
     ylabel_kwargs = kwargs.pop("ylabel_kwargs", None)
+    tick_params_kwargs = kwargs.pop("tick_params_kwargs", None)
 
 
     if sim_kwargs is None:
@@ -239,8 +243,7 @@ def make_transect_layout(
         well_annotations = []
         well_annotations_y = ylim[0] + 1.1 * (ylim[1] - ylim[0])
         annotation_kwargs = {
-            "rotation": "vertical",
-            "annotation_clip": False
+            "rotation": "vertical"
         }
         for row in obs_lut_df.itertuples():
             proj_d = getattr(row, proj_d_col)
@@ -270,6 +273,9 @@ def make_transect_layout(
             "ticks": xlim[1] - ticks,
             "labels": labels
         }
+
+    if tick_params_kwargs is None:
+        tick_params_kwargs = {}
 
     fig, axes = plt.subplots(**subplot_kwargs)
 
@@ -305,10 +311,6 @@ def make_transect_layout(
     # Set ylabel
     axes[0].set_ylabel(ylabel, **ylabel_kwargs)
 
-    # Set limits
-    axes[0].set_xlim(xlim)
-    axes[0].set_ylim(ylim)
-
     # Invert x-axis
     axes[0].xaxis.set_inverted(True)
 
@@ -326,6 +328,12 @@ def make_transect_layout(
         handles=legend_items,
         **legend_kwargs
     )
+
+    axes[0].tick_params(**tick_params_kwargs)
+
+    # Set limits
+    axes[0].set_xlim(xlim)
+    axes[0].set_ylim(ylim)
 
     plt.tight_layout()
 

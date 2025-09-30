@@ -120,8 +120,12 @@ def make_transect_animation(
     interval = kwargs.pop("interval", 500)  # milliseconds between frames
 
     if obs_kwargs is None:
-        obs_kwargs = {"color": "#4B7164"}
-        kwargs["obs_kwargs"] = obs_kwargs
+        obs_kwargs = {
+            "label": 'Observed GWE',
+            "markerfacecolor": "#4B7164",
+            "marker": 'o',
+            "color": "w"
+        }
 
     if sim_kwargs is None:
         sim_kwargs = {
@@ -143,6 +147,8 @@ def make_transect_animation(
         lith_df, **kwargs)
 
     sim_kwargs.pop("label")
+    obs_kwargs.pop("label")
+    obs_kwargs["color"] = obs_kwargs.pop("markerfacecolor")
 
     # Now, we make the update function that will make the frames in the animation
     def update(

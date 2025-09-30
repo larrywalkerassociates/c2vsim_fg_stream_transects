@@ -5,8 +5,8 @@
 
 #######################################################################################
 # Book settings
-title                       : C2VSIM-FG Stream Transects  # The title of the book. Will be placed in the left navbar.
-author                      : Larry Walker Associates  # The author of the book
+title                       : "Leveraging Open Data and Tools for Integrated Surface Water Characterization: The Sacramento River as a Case Study"  # The title of the book. Will be placed in the left navbar.
+author                      : "José Tomás Díaz Casanueva, Ryan Fulton, Camille Woicekowska, Laura Foglia"   # The author of the book
 copyright                   : "2025"  # Copyright year to be placed in the footer
 logo                        : logo.jpg  # A path to the book logo
 

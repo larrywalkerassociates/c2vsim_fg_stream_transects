@@ -4,5 +4,9 @@
 format: jb-book
 root: intro
 chapters:
+- file: a00_introduction.ipynb
 - file: a01_prepare_data.ipynb
-- file: a02_butte_creek.ipynb
+- file: a02_results.ipynb
+  sections:
+    - file: a03_red_bluff_to_chico.ipynb
+    - file: a04_chico_to_yuba.ipynb
