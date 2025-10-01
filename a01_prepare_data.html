@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Preparing Stream and Groundwater Data from C2VSimFG v1.5 &#8212; C2VSIM-FG Stream Transects</title>
+    <title>Methods &#8212; Leveraging Open Data and Tools for Integrated Surface Water Characterization: The Sacramento River as a Case Study</title>
   
   
   
@@ -60,8 +60,8 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'a01_prepare_data';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Butte Creek Stream Transect" href="a02_butte_creek.html" />
-    <link rel="prev" title="Integrating C2VSIM-FG, Borelogs, and CASGEM to Identify Gaining and Losing Stream Reaches in California’s Central Valley" href="intro.html" />
+    <link rel="next" title="Results" href="a02_results.html" />
+    <link rel="prev" title="Introduction" href="a00_introduction.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -153,8 +153,8 @@
       
     
     
-    <img src="_static/logo.jpg" class="logo__image only-light" alt="C2VSIM-FG Stream Transects - Home"/>
-    <script>document.write(`<img src="_static/logo.jpg" class="logo__image only-dark" alt="C2VSIM-FG Stream Transects - Home"/>`);</script>
+    <img src="_static/logo.jpg" class="logo__image only-light" alt="Leveraging Open Data and Tools for Integrated Surface Water Characterization: The Sacramento River as a Case Study - Home"/>
+    <script>document.write(`<img src="_static/logo.jpg" class="logo__image only-dark" alt="Leveraging Open Data and Tools for Integrated Surface Water Characterization: The Sacramento River as a Case Study - Home"/>`);</script>
   
   
 </a></div>
@@ -180,8 +180,14 @@
             </li>
         </ul>
         <ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Preparing Stream and Groundwater Data from C2VSimFG v1.5</a></li>
-<li class="toctree-l1"><a class="reference internal" href="a02_butte_creek.html">Butte Creek Stream Transect</a></li>
+<li class="toctree-l1"><a class="reference internal" href="a00_introduction.html">Introduction</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Methods</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="a02_results.html">Results</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="a03_red_bluff_to_chico.html">Chico to Red Bluff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="a04_chico_to_yuba.html">Yuba City to Chico</a></li>
+<li class="toctree-l2"><a class="reference internal" href="a05_sacramento_to_yuba.html">Yuba City to Chico</a></li>
+</ul>
+</details></li>
 </ul>
 
     </div>
@@ -365,7 +371,7 @@ document.write(`
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>Preparing Stream and Groundwater Data from C2VSimFG v1.5</h1>
+    <h1>Methods</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -381,38 +387,26 @@ document.write(`
                   
   <div class="cell tag_remove-input docutils container">
 </div>
-<section class="tex2jax_ignore mathjax_ignore" id="preparing-stream-and-groundwater-data-from-c2vsimfg-v1-5">
-<h1>Preparing Stream and Groundwater Data from C2VSimFG v1.5<a class="headerlink" href="#preparing-stream-and-groundwater-data-from-c2vsimfg-v1-5" title="Link to this heading">#</a></h1>
-<p>In this section, we prepare the model data that will be used to make the stream transects. The workflow used hereafter
-consists of the following steps:</p>
-<ol class="arabic simple">
-<li><p>We load the Stream Specification File and the Nodal X-Y Coordinate File and generate a lines geodataframe
-of the streams represented in the model.</p></li>
-</ol>
+<section class="tex2jax_ignore mathjax_ignore" id="methods">
+<h1>Methods<a class="headerlink" href="#methods" title="Link to this heading">#</a></h1>
+<ul class="simple">
+<li><p>Description of the tools and techniques used to solve the problem stated in the introduction</p></li>
+<li><p>Section check:</p>
+<ul>
+<li><p>Does it allow the reader to follow and repeat what was done?</p></li>
+<li><p>Does it permit evaluation of how skillfully the work was designed and carried out?</p></li>
+<li><p>Does it place the work in a certain historical context leaving the door open for fertile restudy as the</p></li>
+</ul>
+</li>
+</ul>
 <div class="cell tag_remove-input docutils container">
 </div>
-<ol class="arabic simple" start="2">
-<li><p>Using the stream lines shapefile generated in the previous step, we calculate the distance of each stream node with
-respect to the origin of the stream line.</p></li>
-</ol>
-<div class="cell tag_remove-input docutils container">
-</div>
-<ol class="arabic simple" start="3">
-<li><p>We load the Stratigraphy File and join ground surface elevations and layer thicknesses to the stream nodes.</p></li>
-<li><p>We load the timeseries “Groundwater Head at All Nodes” file (C2VSimFG_GW_HeadAll.out) and join simulated groundwater heads
-to stream nodes.</p></li>
-<li><p>For each node, we extract the groundwater heads for the highest active layer. To do so, we iterate through the
-layers and select the highest one that presents a thickness greater than zero and is above the bottom of the layer.</p></li>
-<li><p>Select CASGEM wells and lithology logs within 500 m of Butte Creek.</p></li>
-</ol>
-<div class="cell tag_remove-input docutils container">
-</div>
-<ol class="arabic simple" start="6">
-<li><p>Select CASGEM wells and AEM lithology logs within 500 m of Butte Creek</p></li>
-<li><p>Download CASGEM water level observations for the selected wells.</p></li>
-</ol>
-<div class="cell tag_remove-input docutils container">
-</div>
+<figure class="align-default" id="sac-river-fig" style="width: 800px">
+<img alt="_images/2b3bf1d2d0a0532ca964bc31c16487ffa8007de4057be0acd6a197e764e62c63.png" src="_images/2b3bf1d2d0a0532ca964bc31c16487ffa8007de4057be0acd6a197e764e62c63.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 1 </span><span class="caption-text">Sacramento River and selected CASGEM wells and lithology logs.</span><a class="headerlink" href="#sac-river-fig" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
 </section>
 
     <script type="text/x-thebe-config">
@@ -446,20 +440,20 @@ layers and select the highest one that presents a thickness greater than zero an
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="intro.html"
+       href="a00_introduction.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Integrating C2VSIM-FG, Borelogs, and CASGEM to Identify Gaining and Losing Stream Reaches in California’s Central Valley</p>
+        <p class="prev-next-title">Introduction</p>
       </div>
     </a>
     <a class="right-next"
-       href="a02_butte_creek.html"
+       href="a02_results.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Butte Creek Stream Transect</p>
+        <p class="prev-next-title">Results</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -479,7 +473,7 @@ layers and select the highest one that presents a thickness greater than zero an
   <div class="footer-item">
     
 <p class="component-author">
-By Larry Walker Associates
+By José Tomás Díaz Casanueva, Camille Woicekowska, Ryan Fulton, and Laura Foglia
 </p>
 
   </div>
