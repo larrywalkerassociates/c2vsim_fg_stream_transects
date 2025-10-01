@@ -322,8 +322,22 @@ if select_casgem_wells_and_lithology_logs:
 
     lith_logs_shp_path_in = os.path.join(aem_dir, "WO7_HQ_LithologyWells.shp")
 
+    lith_logs_shp_path_in_sa6 = os.path.join(aem_dir, "WO6_HQ_LithologyWells.shp")
+
     lith_logs_gdf = gpd.read_file(lith_logs_shp_path_in)
     lith_logs_gdf = lith_logs_gdf.to_crs(streams_gdf.crs)
+    lith_logs_sa6_gdf = gpd.read_file(lith_logs_shp_path_in_sa6)
+    lith_logs_sa6_gdf = lith_logs_sa6_gdf.to_crs(streams_gdf.crs)
+
+    lith_logs_gdf = pd.concat(
+        [
+            lith_logs_gdf,
+            lith_logs_sa6_gdf
+        ],
+        ignore_index=True
+    )
+
+
 
     lith_logs_gdf = lith_logs_gdf.loc[lith_logs_gdf.geometry.within(buffer)].reset_index(drop=True)
 
@@ -386,11 +400,22 @@ else:
 
 # Let's get lithologies now
 lith_csv_in_path = os.path.join(aem_dir, "AEM_WELL_LITHOLOGY_csv_WO7_20230327_HQonly.csv")
+lith_csv_in_path_6 = os.path.join(aem_dir, "AEM_WELL_LITHOLOGY_csv_WO6_20230103_HQonly.csv")
 lith_csv_path = os.path.join(data_dir, f"{stream_name.lower()}_lithology.csv")
 
-make_lithology = False
+make_lithology = True
 if make_lithology:
     lith_df = pd.read_csv(lith_csv_in_path)
+
+    lith_df_6 = pd.read_csv(lith_csv_in_path_6)
+
+    lith_df = pd.concat(
+        [
+            lith_df,
+            lith_df_6
+        ],
+        ignore_index=True
+    )
 
     lith_df = lith_df.rename(columns={"WELL_INFO_ID": "WELLINFOID"})
 
