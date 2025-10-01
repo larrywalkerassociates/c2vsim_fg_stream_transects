@@ -73,9 +73,7 @@ lith_csv_path = os.path.join(data_dir, f"{stream_name.lower()}_lithology.csv")
 
 
 # %% [markdown] editable=true slideshow={"slide_type": ""}
-# ## Yuba City to Chico
-# In this section, we look at the section of the Sacramento River spanning from Yuba City to Chico
-# (120 to 190 miles upstream from confluence with the San Joaquin River)
+# ## Center Transect (Yuba City to Chico)
 # %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
 
 # Let's load the stream nodes
@@ -92,6 +90,9 @@ lith_df = pd.read_csv(lith_csv_path)
 
 # Let's load the lithology logs shapefile
 lith_lut_df = gpd.read_file(lith_logs_shp_path)
+
+# We remove lithology well that seems to have a too high gse
+lith_lut_df = lith_lut_df.loc[lith_lut_df["WELLINFOID"] != 11913].reset_index(drop=True)
 
 obs_lut_df = gpd.read_file(obs_wells_shp_path)
 
@@ -179,7 +180,8 @@ obs_kwargs = {
             "label": 'Observed GWE',
             "markerfacecolor": "#4B7164",
             "marker": 'o',
-            "color": "w"
+            "color": "w",
+    "markersize": 5
         }
 
 streambed_kwargs = {

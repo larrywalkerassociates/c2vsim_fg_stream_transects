@@ -6,9 +6,14 @@
 #######################################################################################
 # Book settings
 title                       : "Leveraging Open Data and Tools for Integrated Surface Water Characterization: The Sacramento River as a Case Study"  # The title of the book. Will be placed in the left navbar.
-author                      : "José Tomás Díaz Casanueva, Camille Woicekowska, Ryan Fulton, and Laura Foglia"   # The author of the book
+author                      : "Larry Walker Associates"   # The author of the book
 copyright                   : "2025"  # Copyright year to be placed in the footer
 logo                        : logo.jpg  # A path to the book logo
+only_build_toc_files: true
+
+sphinx:
+  config:
+    bibtex_reference_style: author_year
 
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
@@ -23,7 +28,7 @@ latex:
 
 # Add a bibtex file so that we can create citations
 bibtex_bibfiles:
-  - references.bib
+  - GRA_2025.bib
 
 # Information about where the book exists on the web
 repository:

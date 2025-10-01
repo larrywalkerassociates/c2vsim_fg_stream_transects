@@ -73,9 +73,7 @@ lith_csv_path = os.path.join(data_dir, f"{stream_name.lower()}_lithology.csv")
 
 
 # %% [markdown] editable=true slideshow={"slide_type": ""}
-# ## Yuba City to Chico
-# In this section, we look at the section of the Sacramento River spanning from Yuba City to Chico
-# (120 to 190 miles upstream from confluence with the San Joaquin River)
+# ## Southern Transect (Sacramento to Yuba City)
 # %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
 
 # Let's load the stream nodes
@@ -343,7 +341,8 @@ obs_kwargs = {
             "label": 'Observed GWE',
             "markerfacecolor": "#4B7164",
             "marker": 'o',
-            "color": "w"
+            "color": "w",
+    "markersize": 5
         }
 
 streambed_kwargs = {

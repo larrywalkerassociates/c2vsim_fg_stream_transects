@@ -12,22 +12,14 @@
 
 # %% [markdown] editable=true slideshow={"slide_type": ""}
 # # Introduction
-# - Problem Statement:
-#    - 10 years of SGMA have generated large amounts of field and modeling data
-#    - Presenting these data in a meaningful, intuitive, and transparent way requires sophisticated and highly customizable
-#      visualization tools
-#    - Mainstream tools are propietary, resulting in license costs and limited flexibility for users
-#  - Why it is important:
-#    - Field and simulated data is of limited use if it cannot be effectively communicated to stakeholders and used
-#      for decision-making
-#    - When processing data, the devil often lies in the details, which proprietary tools often obscure making it difficult
-#      to peer-review and recreate workflows
-#    - High-level programming languages (e.g., Python, R) provide a wide array of open-source and accessible tools that
-#      can be used to streamline data processing, visualization, and dashboard deployment for engineers and scientists.
-#  - How we have approached it (in general terms):
-#    - We have developed a Python-based workflow to process public groundwater levels, lithology logs, bathymetry, and
-#      simulated groundwater levels, displaying them in animated stream transects, which are deployed as dashboards.
-#   - What is new about what we have done:
-#     - Integrating multiple open-source datasets into one type of visualization
-#     - Customizable and transparent workflow that can be replicated at other streams in the Central Valley with low
-#       effort
+#  Over the past decade, SGMA implementation in California has generated vast amounts of observed and simulated data.
+#  Presenting these data in a meaningful, intuitive, and transparent way requires advanced processing and visualization
+#  tools. However, most mainstream tools are proprietary, leading to recurring license costs and limited flexibility.
+#
+#  The widespread adoption of high-level programming such as Python and R has enabled the development of open-source
+#  libraries that support customizable workflows—from data processing and visualization to interactive dashboards.
+#
+#  In this work, we present a Python-based workflow to integrate public datasets of observed and simulated groundwater
+#  levels, lithology logs, and bathymetry, to create animated stream transects for the Sacramento River. These animations
+#  help assess stream-groundwater connectivity under varied hydrologic conditions varied lithologies. The workflow is
+#  customizable and replicable for other streams across California's Central Valley.

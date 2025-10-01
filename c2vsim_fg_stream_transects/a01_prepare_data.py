@@ -67,12 +67,51 @@ red_bluff_path = os.path.join(data_dir, "red_bluff.shp")
 
 # %% [markdown] editable=true slideshow={"slide_type": ""}
 # # Methods
-# - Description of the tools and techniques used to solve the problem stated in the introduction
-# - Section check:
-#   - Does it allow the reader to follow and repeat what was done?
-#   - Does it permit evaluation of how skillfully the work was designed and carried out?
-#   - Does it place the work in a certain historical context leaving the door open for fertile restudy as the
-
+# We extracted stream nodes and their corresponding simulated groundwater heads from CV2SIM-FG v1.5
+# {cite}`california_department_of_water_resources_california_2025-1`,observed groundwater levels from CASGEM
+# {cite}`california_department_of_water_resources_california_2025`, and high-quality lithology logs from DWR's Airborne Electromagnetic Survey (AEM) for areas 6
+# {cite}`california_department_of_water_resources_california_2023` and 7
+# {cite}`california_department_of_water_resources_california_2023-1`
+#
+# We connected the stream nodes to create a Sacramento River streamline. For each node and timestep, we computed
+# groundwater table as the head of the shallowest layer where the head exceeded the bottom elevation. Using simulated
+# heads and CV2SIM-FG v1.5 bottom layer elevations, we calculated the groundwater table elevation for each node and timestep as the head of the highest layer where the head is above
+# the layer bottom elevation. We aggregated AEM lithology textures into broader categories for visualization, as shown in
+# {numref}`lith_plot_cats`. We included CASGEM and AEM lithology wells within 500 m (1,640 ft) of the river. Where CASGEM
+# well labels overlapped, we prioritized observation over irrigation and domestic wells, and shallow over deep wells.
+# When shallow observation wells overlapped, we manually adjusted the x-coordinate of the projection onto the transect
+# for label readability.
+#
+# ```{table} Plotting categories for AEM lithology logs.
+# :name: lith_plot_cats
+# | Texture                 | Plotting Group |
+# | ----------------------- | -------------- |
+# | Boulders                | Gravel         |
+# | Clay                    | Clay           |
+# | Cobbles                 | Gravel         |
+# | Gravel                  | Gravel         |
+# | Rock - Intrusive        | Rock           |
+# | Rock - Metamorphic      | Rock           |
+# | Rock - Sedimentary      | Rock           |
+# | Rock - Undifferentiated | Rock           |
+# | Rock - Volcanic         | Rock           |
+# | Sand                    | Sand           |
+# | Silt                    | Silt           |
+# | Soil                    | Soil           |
+# | Unknown                 | Unknown        |
+# ```
+#
+# We analyzed a 190-mile section of the Sacramento River from Red Bluff to Sacramento, which we divided in three sections
+# for clarity. We assigned cross section mileage relative to the confluence with the San Joaquin River. The soutern
+# transect covers from Sacramento to Yuba City (mile 50 to 120). The central transect spans from Yuba City to Chico
+# (mile 120 to 190). The northern transect ranges from Chico to Red Bluff (mile 190 to 240).
+#
+# For our workflow, we used libraries rasterio {cite}`gillies_rasterio_2013`, shapely
+# {cite}`gillies_shapely_2025`, pandas {cite}`mckinney_data_2010`, geopandas {cite}`jordahl_geopandas_2020`, and
+# numpy {cite}`harris_array_2020` for data processing. For preparing the animations we used matplotlib
+# {cite}`hunter_matplotlib_2007`. We handled deployment was handled using jupyter book
+# {cite}`executable_books_community_jupyter_2020` and GitHub Pages {cite}`github_github_nodate`.
+#
 # %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
 # Let's add stream coordinates to stream nodes
 # Let's create the geodataframe of streams
@@ -326,8 +365,11 @@ if select_casgem_wells_and_lithology_logs:
 
     lith_logs_gdf = gpd.read_file(lith_logs_shp_path_in)
     lith_logs_gdf = lith_logs_gdf.to_crs(streams_gdf.crs)
+    lith_logs_gdf["WELLINFOID"] = lith_logs_gdf["WELLINFOID"].astype(str)+"_sa7"
     lith_logs_sa6_gdf = gpd.read_file(lith_logs_shp_path_in_sa6)
     lith_logs_sa6_gdf = lith_logs_sa6_gdf.to_crs(streams_gdf.crs)
+    lith_logs_sa6_gdf["WELLINFOID"] = lith_logs_sa6_gdf["WELLINFOID"].astype(str) + "_sa6"
+
 
     lith_logs_gdf = pd.concat(
         [
@@ -403,11 +445,16 @@ lith_csv_in_path = os.path.join(aem_dir, "AEM_WELL_LITHOLOGY_csv_WO7_20230327_HQ
 lith_csv_in_path_6 = os.path.join(aem_dir, "AEM_WELL_LITHOLOGY_csv_WO6_20230103_HQonly.csv")
 lith_csv_path = os.path.join(data_dir, f"{stream_name.lower()}_lithology.csv")
 
-make_lithology = True
+make_lithology = False
 if make_lithology:
     lith_df = pd.read_csv(lith_csv_in_path)
+    lith_df = lith_df.rename(columns={"WELL_INFO_ID": "WELLINFOID"})
+    lith_df["WELLINFOID"] = lith_df["WELLINFOID"].astype(str) + "_sa7"
 
     lith_df_6 = pd.read_csv(lith_csv_in_path_6)
+    lith_df_6 = lith_df_6.rename(columns={"WELL_INFO_ID": "WELLINFOID"})
+    lith_df_6["WELLINFOID"] = lith_df_6["WELLINFOID"].astype(str) + "_sa6"
+
 
     lith_df = pd.concat(
         [
@@ -417,7 +464,7 @@ if make_lithology:
         ignore_index=True
     )
 
-    lith_df = lith_df.rename(columns={"WELL_INFO_ID": "WELLINFOID"})
+
 
     lith_df["GROUND_SURFACE_ELEVATION_ft"] = lith_df["GROUND_SURFACE_ELEVATION_m"] * 3.28084
     lith_df["LITH_TOP_DEPTH_ft"] = lith_df["LITH_TOP_DEPTH_m"] * 3.28084
@@ -698,6 +745,7 @@ plt.close()
 # :figwidth: 800px
 # :name: "sac_river_fig"
 #
-# Sacramento River and selected CASGEM wells and lithology logs.
+# Sacramento River and selected CASGEM wells and lithology logs. Distance along the Sacramento River from the confluence
+# with the San Joaquin River at transect sections boundaries are shown in white boxes in units of miles.
 # ```
 # %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]

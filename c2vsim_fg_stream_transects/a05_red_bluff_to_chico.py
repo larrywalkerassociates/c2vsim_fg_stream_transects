@@ -73,9 +73,7 @@ lith_csv_path = os.path.join(data_dir, f"{stream_name.lower()}_lithology.csv")
 
 
 # %% [markdown] editable=true slideshow={"slide_type": ""}
-# ## Chico to Red Bluff
-# In this section, we look at the section of the Sacramento River spanning from Chico to Red Bluff
-# (190 to 250 miles upstream from confluence with the San Joaquin River)
+# ## Northern Transect (Chico to Red Bluff)
 # %% editable=true slideshow={"slide_type": ""} tags=["remove-input"]
 
 # Let's load the stream nodes
@@ -187,7 +185,8 @@ obs_kwargs = {
             "label": 'Observed GWE',
             "markerfacecolor": "#4B7164",
             "marker": 'o',
-            "color": "w"
+            "color": "w",
+    "markersize": 5
         }
 
 streambed_kwargs = {
