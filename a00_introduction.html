@@ -183,12 +183,14 @@
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="a01_prepare_data.html">Methods</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="a02_results.html">Results</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="a03_sacramento_to_yuba.html">Yuba City to Chico</a></li>
-<li class="toctree-l2"><a class="reference internal" href="a04_chico_to_yuba.html">Yuba City to Chico</a></li>
-<li class="toctree-l2"><a class="reference internal" href="a05_red_bluff_to_chico.html">Chico to Red Bluff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="a03_sacramento_to_yuba.html">Southern Transect (Sacramento to Yuba City)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="a04_chico_to_yuba.html">Center Transect (Yuba City to Chico)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="a05_red_bluff_to_chico.html">Northern Transect (Chico to Red Bluff)</a></li>
 </ul>
 </details></li>
-<li class="toctree-l1"><a class="reference internal" href="a06_bibliography.html">Bibliography</a></li>
+<li class="toctree-l1"><a class="reference internal" href="a06_discussion.html">Discussion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="a07_conclusions.html">Discussion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="a08_bibliography.html">Bibliography</a></li>
 </ul>
 
     </div>
@@ -388,39 +390,15 @@ document.write(`
                   
   <section class="tex2jax_ignore mathjax_ignore" id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h1>
-<ul class="simple">
-<li><p>Problem Statement:</p>
-<ul>
-<li><p>10 years of SGMA have generated large amounts of field and modeling data</p></li>
-<li><p>Presenting these data in a meaningful, intuitive, and transparent way requires sophisticated and highly customizable
-visualization tools</p></li>
-<li><p>Mainstream tools are propietary, resulting in license costs and limited flexibility for users</p></li>
-</ul>
-</li>
-<li><p>Why it is important:</p>
-<ul>
-<li><p>Field and simulated data is of limited use if it cannot be effectively communicated to stakeholders and used
-for decision-making</p></li>
-<li><p>When processing data, the devil often lies in the details, which proprietary tools often obscure making it difficult
-to peer-review and recreate workflows</p></li>
-<li><p>High-level programming languages (e.g., Python, R) provide a wide array of open-source and accessible tools that
-can be used to streamline data processing, visualization, and dashboard deployment for engineers and scientists.</p></li>
-</ul>
-</li>
-<li><p>How we have approached it (in general terms):</p>
-<ul>
-<li><p>We have developed a Python-based workflow to process public groundwater levels, lithology logs, bathymetry, and
-simulated groundwater levels, displaying them in animated stream transects, which are deployed as dashboards.</p></li>
-</ul>
-</li>
-<li><p>What is new about what we have done:</p>
-<ul>
-<li><p>Integrating multiple open-source datasets into one type of visualization</p></li>
-<li><p>Customizable and transparent workflow that can be replicated at other streams in the Central Valley with low
-effort</p></li>
-</ul>
-</li>
-</ul>
+<p>Over the past decade, SGMA implementation in California has generated vast amounts of observed and simulated data.
+Presenting these data in a meaningful, intuitive, and transparent way requires advanced processing and visualization
+tools. However, most mainstream tools are proprietary, leading to recurring license costs and limited flexibility.</p>
+<p>The widespread adoption of high-level programming such as Python and R has enabled the development of open-source
+libraries that support customizable workflows—from data processing and visualization to interactive dashboards.</p>
+<p>In this work, we present a Python-based workflow to integrate public datasets of observed and simulated groundwater
+levels, lithology logs, and bathymetry, to create animated stream transects for the Sacramento River. These animations
+help assess stream-groundwater connectivity under varied hydrologic conditions varied lithologies. The workflow is
+customizable and replicable for other streams across California’s Central Valley.</p>
 </section>
 
     <script type="text/x-thebe-config">
