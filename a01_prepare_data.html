@@ -189,7 +189,7 @@
 </ul>
 </details></li>
 <li class="toctree-l1"><a class="reference internal" href="a06_discussion.html">Discussion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="a07_conclusions.html">Discussion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="a07_conclusions.html">Conclusions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="a08_bibliography.html">Bibliography</a></li>
 </ul>
 
@@ -395,25 +395,75 @@ document.write(`
 <p>We extracted stream nodes and their corresponding simulated groundwater heads from CV2SIM-FG v1.5
 <span id="id1">[<a class="reference internal" href="a08_bibliography.html#id3" title="California Department of Water Resources. California Central Valley Groundwater-Surface Water Simulation Model - Fine Grid version 1.5. June 2025. URL: https://data.ca.gov/dataset/california-central-valley-groundwater-surface-water-simulation-model-fine-grid-c2vsimfg/resource/cc0b15aa-5684-41bd-8f41-f7df6bc9d4e8 (visited on 2025-10-01).">California Department of Water Resources, 2025</a>]</span>,observed groundwater levels from CASGEM
 <span id="id2">[<a class="reference internal" href="a08_bibliography.html#id2" title="California Department of Water Resources. California Statewide Groundwater Elevation Monitoring (CASGEM). 2025.">California Department of Water Resources, 2025</a>]</span>, and high-quality lithology logs from DWR’s Airborne Electromagnetic Survey (AEM) for areas 6
-<span id="id3">[<a class="reference internal" href="a08_bibliography.html#id4">California Department of Water Resources, 2023</a>]</span> and 7
-<span id="id4">[<a class="reference internal" href="a08_bibliography.html#id5">California Department of Water Resources, 2023</a>]</span></p>
+<span id="id3">[<a class="reference internal" href="a08_bibliography.html#id4" title="California Department of Water Resources. California Airborne Electromagnetic Surveys Solano, South American, North American, Yolo, Sutter, South Yuba, and North Yuba Groundwater Subbasins. May 2023. URL: https://data.cnra.ca.gov/dataset/aem/resource/a88d98c3-c304-4309-ab18-271bbb74aa4c.">California Department of Water Resources, 2023</a>]</span> and 7
+<span id="id4">[<a class="reference internal" href="a08_bibliography.html#id5" title="California Department of Water Resources. California Airborne Electromagnetic Surveys Sacramento Valley Groundwater Subbasins, Northern Portion. June 2023. URL: https://data.cnra.ca.gov/dataset/aem/resource/79a8226a-f48d-4e9f-94cd-402055b95dc3.">California Department of Water Resources, 2023</a>]</span></p>
 <p>We connected the stream nodes to create a Sacramento River streamline. For each node and timestep, we computed
 groundwater table as the head of the shallowest layer where the head exceeded the bottom elevation. Using simulated
 heads and CV2SIM-FG v1.5 bottom layer elevations, we calculated the groundwater table elevation for each node and timestep as the head of the highest layer where the head is above
 the layer bottom elevation. We aggregated AEM lithology textures into broader categories for visualization, as shown in
-<code class="xref std std-numref docutils literal notranslate"><span class="pre">lith_plot_cats</span></code>. We included CASGEM and AEM lithology wells within 500 m (1,640 ft) of the river. Where CASGEM
+<a class="reference internal" href="#lith-plot-cats"><span class="std std-numref">Table 1</span></a>. We included CASGEM and AEM lithology wells within 500 m (1,640 ft) of the river. Where CASGEM
 well labels overlapped, we prioritized observation over irrigation and domestic wells, and shallow over deep wells.
 When shallow observation wells overlapped, we manually adjusted the x-coordinate of the projection onto the transect
 for label readability.</p>
+<div class="pst-scrollable-table-container"><table class="table" id="lith-plot-cats">
+<caption><span class="caption-number">Table 1 </span><span class="caption-text">Plotting categories for AEM lithology logs.</span><a class="headerlink" href="#lith-plot-cats" title="Link to this table">#</a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Texture</p></th>
+<th class="head"><p>Plotting Group</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Boulders</p></td>
+<td><p>Gravel</p></td>
+</tr>
+<tr class="row-odd"><td><p>Clay</p></td>
+<td><p>Clay</p></td>
+</tr>
+<tr class="row-even"><td><p>Cobbles</p></td>
+<td><p>Gravel</p></td>
+</tr>
+<tr class="row-odd"><td><p>Gravel</p></td>
+<td><p>Gravel</p></td>
+</tr>
+<tr class="row-even"><td><p>Rock - Intrusive</p></td>
+<td><p>Rock</p></td>
+</tr>
+<tr class="row-odd"><td><p>Rock - Metamorphic</p></td>
+<td><p>Rock</p></td>
+</tr>
+<tr class="row-even"><td><p>Rock - Sedimentary</p></td>
+<td><p>Rock</p></td>
+</tr>
+<tr class="row-odd"><td><p>Rock - Undifferentiated</p></td>
+<td><p>Rock</p></td>
+</tr>
+<tr class="row-even"><td><p>Rock - Volcanic</p></td>
+<td><p>Rock</p></td>
+</tr>
+<tr class="row-odd"><td><p>Sand</p></td>
+<td><p>Sand</p></td>
+</tr>
+<tr class="row-even"><td><p>Silt</p></td>
+<td><p>Silt</p></td>
+</tr>
+<tr class="row-odd"><td><p>Soil</p></td>
+<td><p>Soil</p></td>
+</tr>
+<tr class="row-even"><td><p>Unknown</p></td>
+<td><p>Unknown</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <p>We analyzed a 190-mile section of the Sacramento River from Red Bluff to Sacramento, which we divided in three sections
 for clarity. We assigned cross section mileage relative to the confluence with the San Joaquin River. The soutern
 transect covers from Sacramento to Yuba City (mile 50 to 120). The central transect spans from Yuba City to Chico
 (mile 120 to 190). The northern transect ranges from Chico to Red Bluff (mile 190 to 240).</p>
-<p>For our workflow, we used libraries rasterio <span id="id5">[<a class="reference internal" href="a08_bibliography.html#id13" title="Sean Gillies and others. Rasterio: geospatial raster I/O for Python programmers. 2013. URL: https://github.com/rasterio/rasterio.">Gillies and others, 2013</a>]</span>, shapely
-<span id="id6">[<a class="reference internal" href="a08_bibliography.html#id14" title="Sean Gillies, Casper van der Wel, Joris Van den Bossche, Mike W Taves, Joshua Arnott, Brendan C Ward, and others. Shapely. 2025.">Gillies <em>et al.</em>, 2025</a>]</span>, pandas <span id="id7">[<a class="reference internal" href="a08_bibliography.html#id11" title="Wes McKinney. Data Structures for Statistical Computing in Python. In Stéfan van der Walt and Jarrod Millman, editors, Proceedings of the 9th Python in Science Conference, 56 – 61. 2010. doi:10.25080/Majora-92bf1922-00a.">McKinney, 2010</a>]</span>, geopandas <span id="id8">[<a class="reference internal" href="a08_bibliography.html#id10" title="Kelsey Jordahl, Joris Van den Bossche, Martin Fleischmann, Jacob Wasserman, James McBride, Jeffrey Gerard, Jeff Tratner, Matthew Perry, Adrian Garcia Badaracco, Carson Farmer, Geir Arne Hjelle, Alan D. Snow, Micah Cochran, Sean Gillies, Lucas Culbertson, Matt Bartos, Nick Eubank, maxalbert, Aleksey Bilogur, Sergio Rey, Christopher Ren, Dani Arribas-Bel, Leah Wasser, Levi John Wolf, Martin Journois, Joshua Wilson, Adam Greenhall, Chris Holdgraf, Filipe, and François Leblanc. Geopandas. July 2020. URL: https://doi.org/10.5281/zenodo.3946761, doi:10.5281/zenodo.3946761.">Jordahl <em>et al.</em>, 2020</a>]</span>, and
-numpy <span id="id9">[<a class="reference internal" href="a08_bibliography.html#id12" title="Charles R. Harris, K. Jarrod Millman, Stéfan J. van der Walt, Ralf Gommers, Pauli Virtanen, David Cournapeau, Eric Wieser, Julian Taylor, Sebastian Berg, Nathaniel J. Smith, Robert Kern, Matti Picus, Stephan Hoyer, Marten H. van Kerkwijk, Matthew Brett, Allan Haldane, Jaime Fernández del Río, Mark Wiebe, Pearu Peterson, Pierre Gérard-Marchant, Kevin Sheppard, Tyler Reddy, Warren Weckesser, Hameer Abbasi, Christoph Gohlke, and Travis E. Oliphant. Array programming with NumPy. Nature, 585(7825):357–362, September 2020. Publisher: Springer Science and Business Media LLC. URL: https://doi.org/10.1038/s41586-020-2649-2, doi:10.1038/s41586-020-2649-2.">Harris <em>et al.</em>, 2020</a>]</span> for data processing. For preparing the animations we used matplotlib
-<span id="id10">[<a class="reference internal" href="a08_bibliography.html#id9" title="J. D. Hunter. Matplotlib: A 2D graphics environment. Computing in Science &amp; Engineering, 9(3):90–95, 2007. Publisher: IEEE COMPUTER SOC. doi:10.1109/MCSE.2007.55.">Hunter, 2007</a>]</span>. We handled deployment was handled using jupyter book
-<span id="id11">[<a class="reference internal" href="a08_bibliography.html#id15" title="Executable Books Community. Jupyter Book. 2020.">Executable Books Community, 2020</a>]</span> and GitHub Pages <span id="id12">[<a class="reference internal" href="a08_bibliography.html#id16" title="GitHub. GitHub Pages. URL: https://docs.github.com/en/pages.">GitHub, n.d.</a>]</span>.</p>
+<p>For our workflow, we used libraries rasterio <span id="id5">[<a class="reference internal" href="a08_bibliography.html#id12" title="Sean Gillies and others. Rasterio: geospatial raster I/O for Python programmers. 2013. URL: https://github.com/rasterio/rasterio.">Gillies and others, 2013</a>]</span>, shapely
+<span id="id6">[<a class="reference internal" href="a08_bibliography.html#id13" title="Sean Gillies, Casper van der Wel, Joris Van den Bossche, Mike W Taves, Joshua Arnott, Brendan C Ward, and others. Shapely. 2025.">Gillies <em>et al.</em>, 2025</a>]</span>, pandas <span id="id7">[<a class="reference internal" href="a08_bibliography.html#id10" title="Wes McKinney. Data Structures for Statistical Computing in Python. In Stéfan van der Walt and Jarrod Millman, editors, Proceedings of the 9th Python in Science Conference, 56 – 61. 2010. doi:10.25080/Majora-92bf1922-00a.">McKinney, 2010</a>]</span>, geopandas <span id="id8">[<a class="reference internal" href="a08_bibliography.html#id9" title="Kelsey Jordahl, Joris Van den Bossche, Martin Fleischmann, Jacob Wasserman, James McBride, Jeffrey Gerard, Jeff Tratner, Matthew Perry, Adrian Garcia Badaracco, Carson Farmer, Geir Arne Hjelle, Alan D. Snow, Micah Cochran, Sean Gillies, Lucas Culbertson, Matt Bartos, Nick Eubank, maxalbert, Aleksey Bilogur, Sergio Rey, Christopher Ren, Dani Arribas-Bel, Leah Wasser, Levi John Wolf, Martin Journois, Joshua Wilson, Adam Greenhall, Chris Holdgraf, Filipe, and François Leblanc. Geopandas. July 2020. URL: https://doi.org/10.5281/zenodo.3946761, doi:10.5281/zenodo.3946761.">Jordahl <em>et al.</em>, 2020</a>]</span>, and
+numpy <span id="id9">[<a class="reference internal" href="a08_bibliography.html#id11" title="Charles R. Harris, K. Jarrod Millman, Stéfan J. van der Walt, Ralf Gommers, Pauli Virtanen, David Cournapeau, Eric Wieser, Julian Taylor, Sebastian Berg, Nathaniel J. Smith, Robert Kern, Matti Picus, Stephan Hoyer, Marten H. van Kerkwijk, Matthew Brett, Allan Haldane, Jaime Fernández del Río, Mark Wiebe, Pearu Peterson, Pierre Gérard-Marchant, Kevin Sheppard, Tyler Reddy, Warren Weckesser, Hameer Abbasi, Christoph Gohlke, and Travis E. Oliphant. Array programming with NumPy. Nature, 585(7825):357–362, September 2020. Publisher: Springer Science and Business Media LLC. URL: https://doi.org/10.1038/s41586-020-2649-2, doi:10.1038/s41586-020-2649-2.">Harris <em>et al.</em>, 2020</a>]</span> for data processing. For preparing the animations we used matplotlib
+<span id="id10">[<a class="reference internal" href="a08_bibliography.html#id8" title="J. D. Hunter. Matplotlib: A 2D graphics environment. Computing in Science &amp; Engineering, 9(3):90–95, 2007. Publisher: IEEE COMPUTER SOC. doi:10.1109/MCSE.2007.55.">Hunter, 2007</a>]</span>. We handled deployment was handled using jupyter book
+<span id="id11">[<a class="reference internal" href="a08_bibliography.html#id14" title="Executable Books Community. Jupyter Book. 2020.">Executable Books Community, 2020</a>]</span> and GitHub Pages <span id="id12">[<a class="reference internal" href="a08_bibliography.html#id15" title="GitHub. GitHub Pages. URL: https://docs.github.com/en/pages.">GitHub, n.d.</a>]</span>.</p>
 <div class="cell tag_remove-input docutils container">
 </div>
 <figure class="align-default" id="sac-river-fig" style="width: 800px">
