@@ -146,10 +146,10 @@ def make_transect_animation(
         lith_lut_df,
         lith_df, **kwargs)
 
-    sim_kwargs.pop("label")
-    obs_kwargs.pop("label")
-    obs_kwargs.pop("markersize")
-    obs_kwargs["color"] = obs_kwargs.pop("markerfacecolor")
+    sim_kwargs.pop("label",None)
+    obs_kwargs.pop("label",None)
+    obs_kwargs.pop("markersize",None)
+    obs_kwargs["color"] = obs_kwargs.pop("markerfacecolor",None)
 
     # Now, we make the update function that will make the frames in the animation
     def update(

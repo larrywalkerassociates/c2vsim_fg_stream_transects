@@ -366,7 +366,8 @@ kwargs = {
     "xticks_kwargs": xticks_kwargs,
     "borelog_width": 1000,
     "streambed_bottom_col":"bathymetry_ft",
-    "streambed_kwargs": streambed_kwargs
+    "streambed_kwargs": streambed_kwargs,
+    "obs_kwargs": obs_kwargs
 }
 
 html_video = make_transect_animation(
