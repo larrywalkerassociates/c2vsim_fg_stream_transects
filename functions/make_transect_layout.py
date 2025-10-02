@@ -111,6 +111,9 @@ def make_transect_layout(
     ylabel_kwargs: dict, optional
         Additional keyword arguments for the y-axis label.
         Default is None.
+    lith_log_alpha:
+        Transparency coefficient for lithology logs
+        Default is 1.
 
 
     Returns
@@ -146,6 +149,7 @@ def make_transect_layout(
     ylabel = kwargs.pop("ylabel", "Elevation (ft amsl)")
     ylabel_kwargs = kwargs.pop("ylabel_kwargs", None)
     tick_params_kwargs = kwargs.pop("tick_params_kwargs", None)
+    lith_log_alpha = kwargs.pop("lith_log_alpha", 1)
 
 
     if sim_kwargs is None:
@@ -177,6 +181,7 @@ def make_transect_layout(
         }
 
     if legend_items is None:
+        obs_s_local = obs_kwargs.pop("s", None)
         legend_items = [
             Line2D(
                 [0],
@@ -194,6 +199,8 @@ def make_transect_layout(
                 **streambed_kwargs
             )
         ]
+        if obs_s_local is not None:
+            obs_kwargs["s"] = obs_s_local
 
     if subplot_kwargs is None:
         subplot_kwargs = {"nrows": 2,
@@ -295,7 +302,8 @@ def make_transect_layout(
             lith_df_local,
             proj_d_borelog,
             patch_legend_items=legend_items,
-            w=borelog_width
+            w=borelog_width,
+            alpha=lith_log_alpha
         )
 
     # Let's add streambed bottom elevations

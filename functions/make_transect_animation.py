@@ -148,6 +148,7 @@ def make_transect_animation(
 
     sim_kwargs.pop("label")
     obs_kwargs.pop("label")
+    obs_kwargs.pop("markersize")
     obs_kwargs["color"] = obs_kwargs.pop("markerfacecolor")
 
     # Now, we make the update function that will make the frames in the animation
@@ -179,6 +180,7 @@ def make_transect_animation(
         # Let's add observations for the given timestep
         obs_df_ts = obs_df[obs_df[date_col] == ts].reset_index(drop=True)
         for well in obs_df_ts[well_id_col].unique().tolist():
+
             x = obs_lut_df.loc[obs_lut_df[well_id_col] == well, proj_d_col].values[0]
             obs = obs_df_ts.loc[obs_df_ts[well_id_col] == well, obs_col].values[0]
             artists.append(axes[0].scatter(x, obs, label=well, **obs_kwargs))

@@ -11,7 +11,8 @@ def add_bore_logs(
         lith_col="LITH_MAJOR1",
         styles=None,
         patch_legend_items = None,
-        gse_col="GROUND_SURFACE_ELEVATION_ft"
+        gse_col="GROUND_SURFACE_ELEVATION_ft",
+        alpha = 1
 ):
     """
     Add AEM lithologies to a matplotlib axis object.
@@ -88,7 +89,8 @@ def add_bore_logs(
         height = top_depth - df.loc[i, lith_bot_col]
         color = styles[df.loc[i, lith_col]]["facecolor"]
         hatch = styles[df.loc[i, lith_col]]["hatch"]
-        p = patch.Rectangle((xdist, top_elevation-top_depth), width=w, height=height, facecolor=color, edgecolor=None, hatch=hatch)
+        p = patch.Rectangle((xdist, top_elevation-top_depth), width=w, height=height, facecolor=color,
+                            edgecolor=None, hatch=hatch, alpha=alpha)
         ax.add_patch(p)
 
     if patch_legend_items is None:

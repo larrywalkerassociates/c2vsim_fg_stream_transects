@@ -342,7 +342,8 @@ obs_kwargs = {
             "markerfacecolor": "#4B7164",
             "marker": 'o',
             "color": "w",
-    "markersize": 5
+    "markersize": 10,
+    "s": 100
         }
 
 streambed_kwargs = {
