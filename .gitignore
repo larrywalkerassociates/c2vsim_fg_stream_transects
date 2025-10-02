@@ -10,6 +10,13 @@ c2vsim_fg_stream_transects/*.ipynb
 # pycache files
 functions/__pycache__/make_transect_animation.cpython-311.pyc
 functions/__pycache__/make_transect_layout.cpython-311.pyc
+functions/__pycache__/add_bore_logs.cpython-311.pyc
+functions/__pycache__/make_stream_lines_gdf.cpython-311.pyc
+functions/__pycache__/project_points_gdf_to_line_string.cpython-311.pyc
+**/__pycache__/*
 
 # Large bathymetry files
 data/sacramento_river_bathymetry*
+
+# SLURM files
+render_and_deploy*
