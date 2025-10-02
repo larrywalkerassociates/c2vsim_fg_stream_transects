@@ -102,9 +102,11 @@ red_bluff_path = os.path.join(data_dir, "red_bluff.shp")
 # ```
 #
 # We analyzed a 190-mile section of the Sacramento River from Red Bluff to Sacramento, which we divided in three sections
-# for clarity. We assigned cross section mileage relative to the confluence with the San Joaquin River. The soutern
-# transect covers from Sacramento to Yuba City (mile 50 to 120). The central transect spans from Yuba City to Chico
-# (mile 120 to 190). The northern transect ranges from Chico to Red Bluff (mile 190 to 240).
+# for clarity. We extracted Sacramento River bathymetry at stream nodes from {cite}`yurok_tribe_topo-bathymetric_2024`
+# and {cite}`california_department_of_water_resources_revised_2019`. We assigned cross section mileage relative to the
+# confluence with the San Joaquin River. The soutern transect covers from Sacramento to Yuba City (mile 50 to 120).
+# The central transect spans from Yuba City to Chico (mile 120 to 190). The northern transect ranges from Chico to Red
+# Bluff (mile 190 to 240).
 #
 # For our workflow, we used libraries rasterio {cite}`gillies_rasterio_2013`, shapely
 # {cite}`gillies_shapely_2025`, pandas {cite}`mckinney_data_2010`, geopandas {cite}`jordahl_geopandas_2020`, and
