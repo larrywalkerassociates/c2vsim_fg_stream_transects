@@ -22,7 +22,7 @@ import warnings
 from myst_nb import glue
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, Rectangle
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from matplotlib_map_utils.core.north_arrow import NorthArrow, north_arrow
 import numpy as np
@@ -64,6 +64,7 @@ sacramento_path = os.path.join(data_dir, "sacramento.shp")
 yuba_city_path = os.path.join(data_dir, "yuba_city.shp")
 chico_path = os.path.join(data_dir, "chico.shp")
 red_bluff_path = os.path.join(data_dir, "red_bluff.shp")
+california_path = os.path.join(data_dir, "california.shp")
 
 # %% [markdown] editable=true slideshow={"slide_type": ""}
 # # Methods
@@ -605,6 +606,7 @@ sacramento_gdf = gpd.read_file(sacramento_path)
 yuba_city_gdf = gpd.read_file(yuba_city_path)
 chico_gdf = gpd.read_file(chico_path)
 red_bluff_gdf = gpd.read_file(red_bluff_path)
+california_gdf = gpd.read_file(california_path)
 
 # Let's make geodataframe with transects postmiles
 postmiles = [50, 100, 161, 231]
@@ -621,8 +623,8 @@ postmiles_gdf = gpd.GeoDataFrame(
 )
 
 subplot_kwargs = {"ncols": 2,
-                  "width_ratios": [0.9, 0.1],
-                  "figsize": (6, 8)}
+                  "width_ratios": [0.7, 0.3],
+                  "figsize": (8, 8)}
 
 fig, axes = plt.subplots(**subplot_kwargs)
 
@@ -643,7 +645,7 @@ legend_elements.append(Line2D([0], [0], label='CASGEM Wells',
                               color='w', markersize=10, **casgem_well_style_kwargs))
 axes[0] = obs_wells_gdf.plot(ax=axes[0], color = "#CB6015", zorder = 2, **casgem_well_style_kwargs)
 
-axes[1].set_axis_off()
+
 
 # Let's plot the lithology logs now
 lithology_log_style_kwargs = {"marker": "^"}
@@ -665,8 +667,25 @@ legend_elements.append(Patch(facecolor="none",  hatch = "----", edgecolor="#4B71
 axes[0] = red_bluff_gdf.plot(ax=axes[0], color = 'none',  hatch = "||||", edgecolor="#A2495E")
 legend_elements.append(Patch(facecolor="none",  hatch = "||||", edgecolor="#A2495E", label="Red Bluff"))
 
-axes[1].legend(handles=legend_elements)
 
+axes[1] = california_gdf.plot(ax=axes[1], facecolor = 'none', edgecolor="black")
+
+axes[1].add_patch(
+    Rectangle((x_min, y_min),x_max-x_min, y_max-y_min,facecolor = 'none',
+              edgecolor="red",lw= 5)
+)
+
+axes[1].legend(handles=legend_elements)
+cal_bounds = california_gdf["geometry"].bounds.values[0]
+axes[1].set_xlim(cal_bounds[0], cal_bounds[2])
+axes[1].set_ylim(
+    cal_bounds[1] - (
+            cal_bounds[3]-cal_bounds[1]
+    )*1.5,
+    cal_bounds[3])
+# Let's add extent indicator
+
+axes[1].set_axis_off()
 axes[0].set_xlim(x_min-axis_lims_offset, x_max+axis_lims_offset)
 axes[0].set_ylim(y_min-axis_lims_offset, y_max+axis_lims_offset)
 
@@ -727,15 +746,6 @@ axes[0].annotate(
         bbox=dict(boxstyle="square", fc="w"),
     )
 
-# for row in postmiles_gdf.itertuples():
-#     postmile = getattr(row, "postmile")
-#     geom = getattr(row, "geometry")
-#     axes[0].annotate(
-#         f"{postmile}",
-#         xy=list(geom.coords)[0],
-#         xytext=list(geom.coords)[0],
-#         bbox=dict(boxstyle="square", fc="w"),
-#     )
 
 plt.tight_layout()
 
